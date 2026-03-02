@@ -1,8 +1,483 @@
-/*
+/* OnyxMind Chat Styles */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* Container */
+.onyxmind-chat-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background-color: var(--background-primary);
+}
 
-If your plugin does not need CSS, delete this file.
+/* Header */
+.onyxmind-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--size-4-4);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
 
-*/
+.onyxmind-title {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.onyxmind-actions {
+	display: flex;
+	gap: var(--size-4-2);
+}
+
+.onyxmind-button {
+	padding: var(--size-4-1) var(--size-4-2);
+	background: var(--interactive-normal);
+	border: none;
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+	transition: background-color 0.2s;
+}
+
+.onyxmind-button:hover {
+	background: var(--interactive-hover);
+}
+
+.onyxmind-button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+/* Messages Container */
+.onyxmind-messages {
+	flex: 1;
+	overflow-y: auto;
+	padding: var(--size-4-4);
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-4);
+}
+
+/* Welcome Message */
+.onyxmind-welcome {
+	padding: var(--size-4-8);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.onyxmind-welcome h3 {
+	color: var(--text-normal);
+	margin-bottom: var(--size-4-4);
+}
+
+.onyxmind-welcome ul {
+	text-align: left;
+	max-width: 400px;
+	margin: var(--size-4-4) auto;
+	list-style-position: inside;
+}
+
+/* Message */
+.onyxmind-message {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-4);
+	border-radius: var(--radius-m);
+	max-width: 85%;
+}
+
+.onyxmind-message-user {
+	align-self: flex-end;
+	background-color: var(--background-primary-alt);
+}
+
+.onyxmind-message-assistant {
+	align-self: flex-start;
+	background-color: var(--background-secondary);
+}
+
+.onyxmind-message-role {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	text-transform: uppercase;
+}
+
+.onyxmind-message-content,
+.onyxmind-part-text {
+	color: var(--text-normal);
+	line-height: var(--line-height-normal);
+}
+
+.onyxmind-message-content p,
+.onyxmind-part-text p {
+	margin: var(--size-4-2) 0;
+}
+
+.onyxmind-message-content p:first-child {
+	margin-top: 0;
+}
+
+.onyxmind-message-content p:last-child {
+	margin-bottom: 0;
+}
+
+.onyxmind-message-content code {
+	background-color: var(--code-background);
+	padding: 2px 4px;
+	border-radius: var(--radius-s);
+	font-family: var(--font-monospace);
+	font-size: var(--font-smaller);
+}
+
+.onyxmind-message-content pre {
+	background-color: var(--code-background);
+	padding: var(--size-4-4);
+	border-radius: var(--radius-m);
+	overflow-x: auto;
+}
+
+.onyxmind-message-content pre code {
+	background-color: transparent;
+	padding: 0;
+}
+
+.onyxmind-message-timestamp {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
+/* Thinking Indicator */
+.onyxmind-thinking {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-4);
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.onyxmind-thinking::before {
+	content: '⏳';
+	animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+/* Error Message */
+.onyxmind-error {
+	padding: var(--size-4-4);
+	background-color: var(--background-modifier-error);
+	border-left: 3px solid var(--text-error);
+	border-radius: var(--radius-m);
+	color: var(--text-error);
+}
+
+/* Input Container */
+.onyxmind-input-container {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-4);
+	border-top: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+}
+
+.onyxmind-input {
+	width: 100%;
+	min-height: 60px;
+	max-height: 200px;
+	padding: var(--size-4-3);
+	background-color: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	color: var(--text-normal);
+	font-family: var(--font-text);
+	font-size: var(--font-ui-medium);
+	resize: none;
+	overflow-y: auto;
+}
+
+.onyxmind-input:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+}
+
+.onyxmind-input:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.onyxmind-input::placeholder {
+	color: var(--text-faint);
+}
+
+.onyxmind-send-button {
+	align-self: flex-end;
+	padding: var(--size-4-2) var(--size-4-6);
+	background-color: var(--interactive-accent);
+	border: none;
+	border-radius: var(--radius-m);
+	color: var(--text-on-accent);
+	font-weight: var(--font-semibold);
+	cursor: pointer;
+	transition: background-color 0.2s;
+	min-height: 44px;
+	min-width: 80px;
+}
+
+/* Button row (abort + send) */
+.onyxmind-button-row {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--size-4-2);
+}
+
+/* Abort / Stop button */
+.onyxmind-abort-button {
+	padding: var(--size-4-2) var(--size-4-6);
+	background-color: var(--background-modifier-error);
+	border: none;
+	border-radius: var(--radius-m);
+	color: var(--text-error);
+	font-weight: var(--font-semibold);
+	cursor: pointer;
+	transition: background-color 0.2s;
+	min-height: 44px;
+	min-width: 80px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.onyxmind-abort-button::before {
+	content: '■';
+	font-size: 0.72em;
+	line-height: 1;
+	opacity: 0.9;
+}
+
+.onyxmind-abort-button:hover {
+	filter: brightness(1.15);
+}
+
+.onyxmind-abort-button:focus-visible {
+	outline: 2px solid var(--text-error);
+	outline-offset: 2px;
+}
+
+.onyxmind-send-button:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+.onyxmind-send-button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.onyxmind-send-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Mobile Adjustments */
+.is-mobile .onyxmind-message {
+	max-width: 95%;
+}
+
+.is-mobile .onyxmind-input-container {
+	padding: var(--size-4-2);
+}
+
+/* Scrollbar Styling */
+.onyxmind-messages::-webkit-scrollbar {
+	width: 8px;
+}
+
+.onyxmind-messages::-webkit-scrollbar-track {
+	background: var(--background-primary);
+}
+
+.onyxmind-messages::-webkit-scrollbar-thumb {
+	background: var(--background-modifier-border);
+	border-radius: var(--radius-s);
+}
+
+.onyxmind-messages::-webkit-scrollbar-thumb:hover {
+	background: var(--text-faint);
+}
+
+/* ── Message body (multi-part layout) ──────────────────────────────────── */
+.onyxmind-message-body {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	min-width: 0;
+}
+
+/* ── Thinking block ───────────────────────────────────────────────────── */
+.onyxmind-part-thinking {
+	border-left: 2px solid var(--color-purple, #8b5cf6);
+	padding: 4px 10px;
+	border-radius: 0 var(--radius-s) var(--radius-s) 0;
+	opacity: 0.8;
+	font-size: 0.88em;
+}
+
+.onyxmind-part-thinking > summary {
+	cursor: pointer;
+	color: var(--text-muted);
+	font-style: italic;
+	list-style: none;
+	padding: 2px 0;
+	user-select: none;
+}
+
+.onyxmind-part-thinking > summary::-webkit-details-marker { display: none; }
+.onyxmind-part-thinking > summary::before { content: '▸ '; }
+.onyxmind-part-thinking[open] > summary::before { content: '▾ '; }
+
+.onyxmind-thinking-content {
+	padding: 6px 0 2px;
+	color: var(--text-muted);
+	white-space: pre-wrap;
+	font-size: 0.85em;
+	line-height: 1.5;
+	max-height: 160px;
+	overflow-y: auto;
+}
+
+/* ── Tool call cards ──────────────────────────────────────────────────── */
+.onyxmind-part-tool {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-primary);
+	font-size: 0.85em;
+	overflow: hidden;
+	transition: border-color 0.2s;
+}
+
+.onyxmind-part-tool[data-status="running"]   { border-color: var(--interactive-accent); }
+.onyxmind-part-tool[data-status="completed"] { border-color: var(--color-green, #22c55e); }
+.onyxmind-part-tool[data-status="error"]     { border-color: var(--color-red, #ef4444); }
+
+/* Card header */
+.onyxmind-tool-header {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 6px 10px;
+	background: var(--background-secondary);
+	border-left: 3px solid var(--text-faint);
+	min-height: 32px;
+	transition: border-left-color 0.2s;
+}
+
+.onyxmind-part-tool[data-status="running"]   .onyxmind-tool-header { border-left-color: var(--interactive-accent); }
+.onyxmind-part-tool[data-status="completed"] .onyxmind-tool-header { border-left-color: var(--color-green, #22c55e); }
+.onyxmind-part-tool[data-status="error"]     .onyxmind-tool-header { border-left-color: var(--color-red, #ef4444); }
+
+.onyxmind-tool-icon {
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	color: var(--text-faint);
+	flex-shrink: 0;
+	width: 16px;
+	text-align: center;
+}
+
+.onyxmind-tool-name {
+	font-weight: 600;
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+	flex-shrink: 0;
+}
+
+.onyxmind-tool-title {
+	color: var(--text-muted);
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 0.88em;
+	min-width: 0;
+}
+
+/* Status icon */
+.onyxmind-tool-status-icon {
+	flex-shrink: 0;
+	font-size: 0.9em;
+	line-height: 1;
+	color: var(--text-faint);
+}
+
+.onyxmind-part-tool[data-status="running"] .onyxmind-tool-status-icon {
+	display: inline-block;
+	animation: spin 0.8s linear infinite;
+	color: var(--interactive-accent);
+}
+
+.onyxmind-part-tool[data-status="completed"] .onyxmind-tool-status-icon { color: var(--color-green, #22c55e); }
+.onyxmind-part-tool[data-status="error"]     .onyxmind-tool-status-icon { color: var(--color-red, #ef4444); }
+
+/* Output collapsible */
+.onyxmind-tool-output {
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.onyxmind-tool-output > summary {
+	padding: 3px 10px;
+	cursor: pointer;
+	color: var(--text-faint);
+	font-size: 0.82em;
+	list-style: none;
+	user-select: none;
+}
+
+.onyxmind-tool-output > summary:hover {
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+}
+
+.onyxmind-tool-output > summary::-webkit-details-marker { display: none; }
+.onyxmind-tool-output > summary::before { content: '▸ '; }
+.onyxmind-tool-output[open] > summary::before { content: '▾ '; }
+
+.onyxmind-tool-output-content pre {
+	margin: 0;
+	padding: 8px 10px;
+	background: var(--code-background);
+	overflow-x: auto;
+	white-space: pre-wrap;
+	word-break: break-all;
+	font-family: var(--font-monospace);
+	font-size: 0.82em;
+	line-height: 1.5;
+	max-height: 200px;
+	overflow-y: auto;
+	color: var(--text-normal);
+}
+
+.onyxmind-tool-output-error {
+	padding: 8px 10px;
+	color: var(--text-error);
+	font-size: 0.88em;
+	white-space: pre-wrap;
+	word-break: break-word;
+	background: var(--background-modifier-error);
+}
+
+/* Spin animation */
+@keyframes spin {
+	from { transform: rotate(0deg); }
+	to   { transform: rotate(360deg); }
+}

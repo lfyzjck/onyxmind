@@ -9,20 +9,74 @@ import { createOpencodeServerPatched } from '../utils/opencode-server';
 import { execSync } from 'child_process';
 import type { OnyxMindSettings } from '../settings';
 import { findOpencodeExecutable, getEnhancedPath } from '../utils/env';
+import { buildAgentPrompt } from './agent-prompt';
+import type {
+	ApiError,
+	ProviderAuthError,
+	UnknownError,
+	MessageOutputLengthError,
+	MessageAbortedError,
+	StructuredOutputError,
+	ContextOverflowError,
+} from '@opencode-ai/sdk/v2';
 
 export interface Message {
 	role: 'user' | 'assistant';
 	content: string;
 	timestamp: number;
-	error?: any;
+	error?: string;
 }
 
-export interface StreamChunk {
-	type: 'content' | 'thinking' | 'tool_use' | 'error';
-	text?: string;
-	tool?: string;
-	input?: unknown;
-	error?: string;
+/** Incremental text content from the assistant */
+export interface StreamChunkContent {
+	type: 'content';
+	text: string;
+}
+
+/** Reasoning / thinking text from the model */
+export interface StreamChunkThinking {
+	type: 'thinking';
+	text: string;
+}
+
+/** Tool invocation (may fire multiple times as state changes) */
+export interface StreamChunkToolUse {
+	type: 'tool_use';
+	partId: string;
+	tool: string;
+	status: 'pending' | 'running' | 'completed' | 'error';
+	input?: Record<string, unknown>;
+	title?: string;    // running / completed
+	output?: string;   // completed
+	error?: string;    // error
+}
+
+/** A recoverable or fatal error occurred during generation */
+export interface StreamChunkError {
+	type: 'error';
+	error: string;
+}
+
+export type StreamChunk =
+	| StreamChunkContent
+	| StreamChunkThinking
+	| StreamChunkToolUse
+	| StreamChunkError;
+
+type SessionError =
+	| ApiError
+	| ProviderAuthError
+	| UnknownError
+	| MessageOutputLengthError
+	| MessageAbortedError
+	| StructuredOutputError
+	| ContextOverflowError;
+
+function extractErrorMessage(err: SessionError): string {
+	if ('data' in err && err.data && typeof err.data === 'object' && 'message' in err.data) {
+		return `[${err.name}] ${(err.data as { message: string }).message}`;
+	}
+	return err.name;
 }
 
 export class OpencodeService {
@@ -81,13 +135,17 @@ export class OpencodeService {
 
 			this.abortController = new AbortController();
 
+			// Build the Obsidian-aware system prompt for the build agent
+			const vaultPath = (this.app as any).vault.adapter.basePath as string | undefined;
+			const agentPrompt = buildAgentPrompt({ vaultPath });
+
 			// 1. 启动 server（使用 patch 版本，cors 同时通过 --cors 参数传入）
 			const serverResult = await createOpencodeServerPatched({
 				hostname: "127.0.0.1",
 				port: this.port,
 				signal: this.abortController.signal,
 				config: {
-					model: "k2p5",
+					model: this.settings.modelId,
 					server: {
 						cors: ["app://obsidian.md"],
 					},
@@ -103,7 +161,12 @@ export class OpencodeService {
 							},
 						},
 					},
-				},
+					agent: {
+						build: {
+							prompt: agentPrompt,
+						},
+					},
+				} as any,
 			});
 
 			this.server = serverResult;
@@ -169,12 +232,8 @@ export class OpencodeService {
 			console.log('[OnyxMind] Using vault path:', vaultPath);
 
 			const response = await this.client.session.create({
-				body: {
-					title: title || 'OnyxMind Session'
-				},
-				query: {
-					directory: vaultPath  // Use absolute vault path
-				}
+				title: title || 'OnyxMind Session',
+				directory: vaultPath,
 			});
 
 			console.log('[OnyxMind] Session create response:', response);
@@ -233,14 +292,12 @@ export class OpencodeService {
 
 			// Send async prompt (non-blocking)
 			await this.client.session.promptAsync({
-				path: { id: sessionId },
-				body: {
-					parts: [{ type: 'text', text: prompt }],
-					model: {
-						providerID: this.settings.providerId,
-						modelID: this.settings.modelId
-					}
-				}
+				sessionID: sessionId,
+				parts: [{ type: 'text', text: prompt }],
+				model: {
+					providerID: this.settings.providerId,
+					modelID: this.settings.modelId,
+				},
 			});
 
 			console.log('[OnyxMind] Async prompt sent, subscribing to events...');
@@ -257,113 +314,115 @@ export class OpencodeService {
 	}
 
 	/**
-	 * Stream response from SSE events
-	 * Converts SSE events to StreamChunk format
+	 * Stream response from SSE events.
+	 *
+	 * Event → StreamChunk mapping:
+	 *   message.part.updated (text/delta)   → StreamChunkContent
+	 *   message.part.updated (reasoning)    → StreamChunkThinking
+	 *   message.part.updated (tool)         → StreamChunkToolUse
+	 *   session.error                       → StreamChunkError
+	 *   message.updated (assistant w/error) → StreamChunkError
+	 *   session.idle                        → end of stream
 	 */
 	private async *streamResponseFromEvents(sessionId: string): AsyncIterableIterator<StreamChunk> {
 		try {
 			const events = await this.client!.event.subscribe();
 
 			if (!events || !events.stream) {
-				console.error('[OnyxMind Error] No event stream available');
-				yield {
-					type: 'error',
-					error: 'No event stream available'
-				};
+				yield { type: 'error', error: 'No event stream available' };
 				return;
 			}
 
 			console.log('[OnyxMind] Event stream subscribed, waiting for responses...');
 
 			let isIdle = false;
+			// Track the current assistant message so we only emit parts that belong to it.
 			let assistantMessageId: string | null = null;
 
 			for await (const event of events.stream) {
-				// Only process events for our session
-				if (event.properties?.sessionID && event.properties.sessionID !== sessionId) {
-					continue;
-				}
-
 				switch (event.type) {
-					case 'message.updated':
-						// Track assistant message creation
-						if (event.properties?.info?.role === 'assistant') {
-							assistantMessageId = event.properties.info.id;
-							console.log('[OnyxMind] Assistant message created:', assistantMessageId);
+					// ── Message lifecycle ─────────────────────────────────────────
+					case 'message.updated': {
+						const info = event.properties.info;
+						if (info.sessionID !== sessionId) break;
 
-							// Check for errors
-							if (event.properties.info.error) {
+						if (info.role === 'assistant') {
+							assistantMessageId = info.id;
+
+							// Only report error when the message is completed (time.completed set)
+							if (info.error && (info as any).time?.completed) {
 								yield {
 									type: 'error',
-									error: JSON.stringify(event.properties.info.error)
+									error: extractErrorMessage(info.error),
 								};
 							}
 						}
 						break;
+					}
 
-					case 'message.part.updated':
-						// Stream text content
-						if (event.properties?.part) {
-							const part = event.properties.part;
+					// ── Streaming part updates ────────────────────────────────────
+					case 'message.part.updated': {
+						const part = event.properties.part;
+						if (part.sessionID !== sessionId) break;
+						if (assistantMessageId && part.messageID !== assistantMessageId) break;
 
-							// Only process parts from our assistant message
-							if (assistantMessageId && part.messageID === assistantMessageId) {
-								if (part.type === 'text' && part.text) {
-									yield {
-										type: 'content',
-										text: part.text
-									};
-								} else if (part.type === 'thinking' && part.thinking) {
-									yield {
-										type: 'thinking',
-										text: part.thinking
-									};
-								} else if (part.type === 'tool-use' && part.tool) {
-									yield {
-										type: 'tool_use',
-										tool: part.tool,
-										input: part.input
-									};
-								}
+						// delta carries the incremental text; use full text as fallback
+						const delta = event.properties.delta;
+
+						if (part.type === 'text') {
+							const text = delta ?? part.text;
+							if (text) yield { type: 'content', text };
+						} else if (part.type === 'reasoning') {
+							const text = delta ?? part.text;
+							if (text) yield { type: 'thinking', text };
+						} else if (part.type === 'tool') {
+							const state = part.state;
+							if (!state) break;
+							const chunk: StreamChunkToolUse = {
+								type: 'tool_use',
+								partId: part.id,
+								tool: part.tool,
+								status: state.status,
+								input: state.input,
+							};
+							if (state.status === 'running' && state.title) chunk.title = state.title;
+							if (state.status === 'completed') {
+								chunk.title = state.title;
+								chunk.output = state.output;
 							}
+							if (state.status === 'error') chunk.error = state.error;
+							yield chunk;
 						}
 						break;
+					}
 
-					case 'message.part.delta':
-						// Stream incremental text updates
-						if (event.properties?.delta && event.properties?.partID) {
-							// Only process deltas from our assistant message
-							if (assistantMessageId && event.properties.messageID === assistantMessageId) {
-								if (event.properties.field === 'text') {
-									yield {
-										type: 'content',
-										text: event.properties.delta
-									};
-								}
-							}
+					// ── Session-level error (API / auth / etc.) ───────────────────
+					case 'session.error': {
+						if (event.properties.sessionID && event.properties.sessionID !== sessionId) break;
+						if (event.properties.error) {
+							yield {
+								type: 'error',
+								error: extractErrorMessage(event.properties.error),
+							};
 						}
 						break;
+					}
 
-					case 'session.idle':
-						// Session completed
-						if (event.properties?.sessionID === sessionId) {
+					// ── Stream termination ────────────────────────────────────────
+					case 'session.idle': {
+						if (event.properties.sessionID === sessionId) {
 							console.log('[OnyxMind] Session idle, streaming complete');
 							isIdle = true;
 						}
 						break;
+					}
 
 					case 'session.status':
-						// Log status changes
-						if (event.properties?.status) {
-							console.log('[OnyxMind] Session status:', event.properties.status.type);
-						}
+						console.log('[OnyxMind] Session status:', (event.properties as any).status?.type);
 						break;
 				}
 
-				// Exit when session becomes idle
-				if (isIdle) {
-					break;
-				}
+				if (isIdle) break;
 			}
 
 			console.log('[OnyxMind] Event stream completed');
@@ -379,6 +438,26 @@ export class OpencodeService {
 	}
 
 	/**
+	 * Abort a running session
+	 * Sends an interrupt signal to the OpenCode server ([Request interrupted by user])
+	 */
+	async abortSession(sessionId: string): Promise<boolean> {
+		if (!this.client) {
+			return false;
+		}
+
+		try {
+			console.log('[OnyxMind] Aborting session:', sessionId);
+			await this.client.session.abort({ sessionID: sessionId });
+			console.log('[OnyxMind] Session aborted:', sessionId);
+			return true;
+		} catch (error) {
+			console.error('[OnyxMind Error] Failed to abort session:', error);
+			return false;
+		}
+	}
+
+	/**
 	 * Delete a session
 	 */
 	async deleteSession(sessionId: string): Promise<boolean> {
@@ -388,7 +467,7 @@ export class OpencodeService {
 
 		try {
 			await this.client.session.delete({
-				path: { id: sessionId }
+				sessionID: sessionId,
 			});
 			return true;
 		} catch (error) {
@@ -486,14 +565,12 @@ export class OpencodeService {
 			console.log('[OnyxMind] Sending async prompt:', { sessionId, promptLength: prompt.length });
 
 			const response = await this.client.session.promptAsync({
-				path: { id: sessionId },
-				body: {
-					parts: [{ type: 'text', text: prompt }],
-					model: {
-						providerID: this.settings.providerId,
-						modelID: this.settings.modelId
-					}
-				}
+				sessionID: sessionId,
+				parts: [{ type: 'text', text: prompt }],
+				model: {
+					providerID: this.settings.providerId,
+					modelID: this.settings.modelId,
+				},
 			});
 
 			console.log('[OnyxMind] Async prompt sent:', response);
