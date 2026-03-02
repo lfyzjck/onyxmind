@@ -18,6 +18,7 @@ import type {
 	MessageAbortedError,
 	StructuredOutputError,
 	ContextOverflowError,
+	OpencodeClient,
 } from '@opencode-ai/sdk/v2';
 
 export interface Message {
@@ -25,6 +26,23 @@ export interface Message {
 	content: string;
 	timestamp: number;
 	error?: string;
+	tools?: StreamChunkToolUse[];
+	hasThinking?: boolean;
+}
+
+export interface RemoteSessionSummary {
+	id: string;
+	title: string;
+	directory: string;
+	createdAt: number;
+	updatedAt: number;
+}
+
+export interface AvailableCommand {
+	name: string;
+	description: string;
+	source: 'command' | 'mcp' | 'skill';
+	template: string;
 }
 
 /** Incremental text content from the assistant */
@@ -80,11 +98,12 @@ function extractErrorMessage(err: SessionError): string {
 }
 
 export class OpencodeService {
-	private client: any = null;
+	private client: OpencodeClient | null = null;
 	private settings: OnyxMindSettings;
 	private app: App;
 	private server: any = null;
 	private abortController: AbortController | null = null;
+	private vaultPath: string | null = null;
 
 	private port = 4096;
 
@@ -136,8 +155,14 @@ export class OpencodeService {
 			this.abortController = new AbortController();
 
 			// Build the Obsidian-aware system prompt for the build agent
-			const vaultPath = (this.app as any).vault.adapter.basePath as string | undefined;
-			const agentPrompt = buildAgentPrompt({ vaultPath });
+			this.vaultPath = (this.app as any).vault.adapter.basePath as string | undefined ?? null;
+			if (!this.vaultPath) {
+				const msg = 'Failed to detect vault path.';
+				new Notice(msg);
+				console.error('[OnyxMind]', msg);
+				return false;
+			}
+			const agentPrompt = buildAgentPrompt({ vaultPath: this.vaultPath });
 
 			// 1. 启动 server（使用 patch 版本，cors 同时通过 --cors 参数传入）
 			const serverResult = await createOpencodeServerPatched({
@@ -174,6 +199,7 @@ export class OpencodeService {
 			// 2. 创建 client，连接到 server
 			this.client = createOpencodeClient({
 				baseUrl: serverResult.url,
+				directory: this.vaultPath,
 			});
 
 			console.log('[OnyxMind] OpenCode initialized successfully');
@@ -202,6 +228,7 @@ export class OpencodeService {
 			this.server = null;
 		}
 		this.client = null;
+		this.vaultPath = null;
 		// Fallback: force-kill anything still on the port
 		this.killPortProcess();
 	}
@@ -211,6 +238,277 @@ export class OpencodeService {
 	 */
 	isInitialized(): boolean {
 		return this.client !== null;
+	}
+
+	/**
+	 * Get underlying OpenCode client
+	 */
+	getClient(): OpencodeClient {
+		if (!this.client) {
+			throw new Error('OpenCode client not initialized');
+		}
+		return this.client;
+	}
+
+	/**
+	 * Get current vault path used for OpenCode directory scoping
+	 */
+	getVaultPath(): string | null {
+		return this.vaultPath;
+	}
+
+	/**
+	 * List sessions under current vault directory scope
+	 */
+	async listSessions(): Promise<RemoteSessionSummary[] | null> {
+		if (!this.client) {
+			return null;
+		}
+
+		const vaultPath = this.vaultPath ?? (this.app as any).vault.adapter.basePath;
+		if (!vaultPath) {
+			return null;
+		}
+
+		try {
+			const response = await this.client.session.list({
+				directory: vaultPath,
+			});
+
+			if (!('data' in response) || !Array.isArray(response.data)) {
+				return [];
+			}
+
+			return response.data
+				.filter((item: any) => item && typeof item.id === 'string')
+				.map((item: any) => ({
+					id: item.id,
+					title: typeof item.title === 'string' ? item.title : 'Session',
+					directory: typeof item.directory === 'string' ? item.directory : vaultPath,
+					createdAt: typeof item.time?.created === 'number' ? item.time.created : Date.now(),
+					updatedAt: typeof item.time?.updated === 'number' ? item.time.updated : Date.now(),
+				}));
+		} catch (error) {
+			console.error('[OnyxMind] Failed to list sessions:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * List available slash commands under current vault directory scope
+	 */
+	async listCommands(): Promise<AvailableCommand[] | null> {
+		if (!this.client) {
+			return null;
+		}
+
+		const vaultPath = this.vaultPath ?? (this.app as any).vault.adapter.basePath;
+		if (!vaultPath) {
+			return null;
+		}
+
+		try {
+			const response = await this.client.command.list({
+				directory: vaultPath,
+			});
+
+			if (!('data' in response) || !Array.isArray(response.data)) {
+				return [];
+			}
+
+			return response.data
+				.filter((item: any) => item && typeof item.name === 'string')
+				.map((item: any): AvailableCommand => ({
+					name: item.name,
+					description: typeof item.description === 'string' ? item.description : '',
+					source: item.source === 'mcp' || item.source === 'skill' ? item.source : 'command',
+					template: typeof item.template === 'string' ? item.template : '',
+				}))
+				.sort((a, b) => a.name.localeCompare(b.name));
+		} catch (error) {
+			console.error('[OnyxMind] Failed to list commands:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Load message history for a specific session in the current vault scope
+	 */
+	async getSessionMessages(sessionId: string): Promise<Message[] | null> {
+		if (!this.client) {
+			return null;
+		}
+
+		const vaultPath = this.vaultPath ?? (this.app as any).vault.adapter.basePath;
+		if (!vaultPath) {
+			return null;
+		}
+
+		try {
+			const response = await this.client.session.messages({
+				sessionID: sessionId,
+				directory: vaultPath,
+				limit: Math.max(1, this.settings.maxHistoryMessages),
+			});
+
+			if (!('data' in response) || !Array.isArray(response.data)) {
+				return [];
+			}
+
+			const messages = response.data
+				.map((entry: any): Message | null => {
+					if (!entry || typeof entry !== 'object' || !entry.info) {
+						return null;
+					}
+
+					const role = entry.info.role === 'assistant' ? 'assistant' : 'user';
+					const timestamp = typeof entry.info.time?.created === 'number'
+						? entry.info.time.created
+						: Date.now();
+					const reasoning = this.extractReasoningText(entry.parts);
+					const hasReasoningText = reasoning.trim().length > 0;
+					const content = this.extractMessageText(entry.parts);
+					const tools = role === 'assistant'
+						? this.extractToolParts(entry.parts)
+						: [];
+					const error = role === 'assistant' && entry.info.error
+						? this.formatSessionError(entry.info.error)
+						: undefined;
+
+					if (!content && !error && tools.length === 0) {
+						return null;
+					}
+
+					return {
+						role,
+						content,
+						timestamp,
+						error,
+						tools: tools.length > 0 ? tools : undefined,
+						hasThinking: role === 'assistant' && hasReasoningText ? true : undefined,
+					};
+				})
+				.filter((message: Message | null): message is Message => message !== null)
+				.sort((a, b) => a.timestamp - b.timestamp);
+
+			return messages;
+		} catch (error) {
+			console.error('[OnyxMind] Failed to load session messages:', error);
+			return null;
+		}
+	}
+
+	private extractMessageText(parts: unknown): string {
+		if (!Array.isArray(parts)) {
+			return '';
+		}
+
+		const text = parts
+			.filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+			.map((part: any) => part.text)
+			.join('');
+
+		if (text) {
+			return text;
+		}
+
+		const reasoning = this.extractReasoningText(parts);
+		return reasoning.trim().length > 0 ? reasoning : '';
+	}
+
+	private extractReasoningText(parts: unknown): string {
+		if (!Array.isArray(parts)) {
+			return '';
+		}
+
+		return parts
+			.filter((part: any) => part?.type === 'reasoning' && typeof part.text === 'string')
+			.map((part: any) => part.text)
+			.join('');
+	}
+
+	private extractToolParts(parts: unknown): StreamChunkToolUse[] {
+		if (!Array.isArray(parts)) {
+			return [];
+		}
+
+		const tools: StreamChunkToolUse[] = [];
+		for (const part of parts) {
+			if (!part || typeof part !== 'object') {
+				continue;
+			}
+
+			const raw = part as any;
+			if (raw.type !== 'tool' || typeof raw.tool !== 'string' || typeof raw.id !== 'string') {
+				continue;
+			}
+
+			const state = raw.state;
+			if (!state || typeof state !== 'object') {
+				continue;
+			}
+
+			const status = state.status === 'running'
+				|| state.status === 'completed'
+				|| state.status === 'error'
+				|| state.status === 'pending'
+				? state.status
+				: 'pending';
+
+			const tool: StreamChunkToolUse = {
+				type: 'tool_use',
+				partId: raw.id,
+				tool: raw.tool,
+				status,
+			};
+
+			if (state.input && typeof state.input === 'object' && !Array.isArray(state.input)) {
+				tool.input = state.input as Record<string, unknown>;
+			}
+
+			if (typeof state.title === 'string') {
+				tool.title = state.title;
+			}
+
+			if (state.output !== undefined && state.output !== null) {
+				tool.output = this.toDisplayString(state.output);
+			}
+
+			if (state.error !== undefined && state.error !== null) {
+				tool.error = this.toDisplayString(state.error);
+			}
+
+			tools.push(tool);
+		}
+
+		return tools;
+	}
+
+	private toDisplayString(value: unknown): string {
+		if (typeof value === 'string') {
+			return value;
+		}
+		try {
+			return JSON.stringify(value, null, 2);
+		} catch (_) {
+			return String(value);
+		}
+	}
+
+	private formatSessionError(error: unknown): string {
+		if (error && typeof error === 'object' && 'name' in error) {
+			try {
+				return extractErrorMessage(error as SessionError);
+			} catch (_) {
+				// Fall through to generic formatting
+			}
+		}
+
+		if (error instanceof Error) {
+			return error.message;
+		}
+
+		return String(error);
 	}
 
 	/**
@@ -228,7 +526,7 @@ export class OpencodeService {
 			console.log('[OnyxMind] Creating session:', title);
 
 			// Get vault path for directory parameter
-			const vaultPath = (this.app as any).vault.adapter.basePath;
+			const vaultPath = this.vaultPath ?? (this.app as any).vault.adapter.basePath;
 			console.log('[OnyxMind] Using vault path:', vaultPath);
 
 			const response = await this.client.session.create({

@@ -11,8 +11,10 @@ export interface OnyxMindSettings {
 	// Behavior settings
 	defaultSearchScope: 'current-folder' | 'vault';
 	autoSave: boolean;
+	maxActiveSessions: number;
 	confirmFileOperations: boolean;
 	maxHistoryMessages: number;
+	showToolCallsAfterStreaming: boolean;
 
 	// Advanced settings
 	timeout: number;
@@ -30,8 +32,10 @@ export const DEFAULT_SETTINGS: OnyxMindSettings = {
 	// Behavior settings
 	defaultSearchScope: 'vault',
 	autoSave: true,
+	maxActiveSessions: 3,
 	confirmFileOperations: false,
 	maxHistoryMessages: 50,
+	showToolCallsAfterStreaming: true,
 
 	// Advanced settings
 	timeout: 30000,
@@ -134,6 +138,20 @@ export class OnyxMindSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName('Maximum active sessions')
+			.setDesc('Limit how many sessions can stay open at the same time.')
+			.addText(text => text
+				.setPlaceholder('3')
+				.setValue(String(this.plugin.settings.maxActiveSessions))
+				.onChange(async (value) => {
+					const num = parseInt(value);
+					if (!isNaN(num) && num > 0) {
+						this.plugin.settings.maxActiveSessions = num;
+						await this.plugin.saveSettings();
+					}
+				}));
+
+		new Setting(containerEl)
 			.setName('Confirm file operations')
 			.setDesc('Ask for confirmation before AI modifies files.')
 			.addToggle(toggle => toggle
@@ -155,6 +173,16 @@ export class OnyxMindSettingTab extends PluginSettingTab {
 						this.plugin.settings.maxHistoryMessages = num;
 						await this.plugin.saveSettings();
 					}
+				}));
+
+		new Setting(containerEl)
+			.setName('Show tool calls after streaming')
+			.setDesc('Keep tool call details visible after a response finishes streaming.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showToolCallsAfterStreaming)
+				.onChange(async (value) => {
+					this.plugin.settings.showToolCallsAfterStreaming = value;
+					await this.plugin.saveSettings();
 				}));
 
 		// Advanced settings

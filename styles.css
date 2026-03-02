@@ -1,483 +1,690 @@
-/* OnyxMind Chat Styles */
+/* OnyxMind chat UI (Claudian-inspired sidebar layout) */
 
-/* Container */
+.onyxmind-react-root {
+	height: 100%;
+}
+
 .onyxmind-chat-container {
+	--onyxmind-bg-shell: var(--background-primary-alt);
+	--onyxmind-bg-panel: var(--background-primary);
+	--onyxmind-bg-soft: var(--background-secondary);
+	--onyxmind-line: var(--background-modifier-border);
+	--onyxmind-text: var(--text-normal);
+	--onyxmind-muted: var(--text-muted);
+	--onyxmind-faint: var(--text-faint);
+	--onyxmind-accent: #8b7dff;
+	--onyxmind-accent-soft: rgba(139, 125, 255, 0.16);
+	--onyxmind-success: #6aa35f;
+	--onyxmind-warning: #da8457;
+	--onyxmind-danger: var(--text-error);
+
 	display: flex;
 	flex-direction: column;
 	height: 100%;
-	background-color: var(--background-primary);
+	background: var(--onyxmind-bg-shell);
+	color: var(--onyxmind-text);
+	font-family: var(--font-monospace);
 }
 
-/* Header */
-.onyxmind-header {
+.onyxmind-toolbar {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: var(--size-4-4);
-	border-bottom: 1px solid var(--background-modifier-border);
+	padding: 6px 10px;
+	border-bottom: 1px solid var(--onyxmind-line);
+	background: var(--onyxmind-bg-panel);
 }
 
-.onyxmind-title {
-	font-size: var(--font-ui-medium);
-	font-weight: var(--font-semibold);
-	color: var(--text-normal);
-}
-
-.onyxmind-actions {
+.onyxmind-toolbar-group {
 	display: flex;
-	gap: var(--size-4-2);
+	align-items: center;
+	gap: 8px;
 }
 
-.onyxmind-button {
-	padding: var(--size-4-1) var(--size-4-2);
-	background: var(--interactive-normal);
-	border: none;
-	border-radius: var(--radius-s);
+.onyxmind-toolbar-glyph {
+	font-size: 11px;
+	color: var(--onyxmind-faint);
+	line-height: 1;
+}
+
+.onyxmind-toolbar-button {
+	border: 1px solid var(--onyxmind-line);
+	background: var(--onyxmind-bg-soft);
+	color: var(--onyxmind-muted);
+	border-radius: 6px;
+	height: 22px;
+	min-width: 22px;
+	padding: 0 6px;
+	font-size: 11px;
 	cursor: pointer;
-	font-size: var(--font-ui-small);
-	color: var(--text-normal);
-	transition: background-color 0.2s;
 }
 
-.onyxmind-button:hover {
-	background: var(--interactive-hover);
+.onyxmind-toolbar-button:hover {
+	color: var(--onyxmind-text);
 }
 
-.onyxmind-button:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+.onyxmind-toolbar-button:focus-visible {
+	outline: 2px solid var(--onyxmind-accent);
 	outline-offset: 2px;
 }
 
-/* Messages Container */
+.onyxmind-brand-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--onyxmind-line);
+	background: var(--onyxmind-bg-panel);
+}
+
+.onyxmind-brand-icon {
+	color: var(--onyxmind-warning);
+	font-size: 14px;
+	line-height: 1;
+}
+
+.onyxmind-brand-meta {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.onyxmind-brand-title {
+	font-family: var(--font-interface);
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--onyxmind-text);
+	letter-spacing: 0.01em;
+}
+
+.onyxmind-header-scope {
+	font-size: 11px;
+	color: var(--onyxmind-faint);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 230px;
+}
+
 .onyxmind-messages {
 	flex: 1;
 	overflow-y: auto;
-	padding: var(--size-4-4);
+	padding: 12px;
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-4-4);
+	gap: 10px;
+	background: var(--onyxmind-bg-shell);
 }
 
-/* Welcome Message */
 .onyxmind-welcome {
-	padding: var(--size-4-8);
-	text-align: center;
-	color: var(--text-muted);
+	background: #a6adb7;
+	border-radius: 10px;
+	padding: 12px 14px;
+	color: #f7f8fb;
+	font-size: 13px;
+	line-height: 1.5;
 }
 
-.onyxmind-welcome h3 {
-	color: var(--text-normal);
-	margin-bottom: var(--size-4-4);
+.onyxmind-welcome code {
+	background: rgba(255, 255, 255, 0.18);
+	padding: 1px 4px;
+	border-radius: 4px;
+	color: #ffffff;
 }
 
-.onyxmind-welcome ul {
-	text-align: left;
-	max-width: 400px;
-	margin: var(--size-4-4) auto;
-	list-style-position: inside;
-}
-
-/* Message */
 .onyxmind-message {
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-4-2);
-	padding: var(--size-4-4);
-	border-radius: var(--radius-m);
-	max-width: 85%;
+	gap: 4px;
 }
 
-.onyxmind-message-user {
-	align-self: flex-end;
-	background-color: var(--background-primary-alt);
+.onyxmind-message::before {
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1;
+	letter-spacing: 0.02em;
 }
 
-.onyxmind-message-assistant {
-	align-self: flex-start;
-	background-color: var(--background-secondary);
+.onyxmind-message-user::before {
+	content: 'Prompt';
+	color: var(--onyxmind-warning);
 }
 
-.onyxmind-message-role {
-	font-size: var(--font-ui-smaller);
-	font-weight: var(--font-semibold);
-	color: var(--text-muted);
-	text-transform: uppercase;
+.onyxmind-message-assistant.onyxmind-message-has-thinking::before {
+	content: 'Thought';
+	color: var(--onyxmind-warning);
+}
+
+.onyxmind-message-body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.onyxmind-message-user .onyxmind-message-body {
+	background: #a6adb7;
+	border-radius: 10px;
+	padding: 12px 14px;
+	color: #f7f8fb;
+}
+
+.onyxmind-message-user .onyxmind-part-text,
+.onyxmind-message-user .onyxmind-part-text * {
+	color: #f7f8fb;
+}
+
+.onyxmind-message-assistant .onyxmind-message-body {
+	padding: 2px 2px 0;
 }
 
 .onyxmind-message-content,
 .onyxmind-part-text {
-	color: var(--text-normal);
-	line-height: var(--line-height-normal);
+	font-family: var(--font-monospace);
+	font-size: 14px;
+	line-height: 1.55;
+	color: var(--onyxmind-text);
+	word-break: break-word;
 }
 
 .onyxmind-message-content p,
 .onyxmind-part-text p {
-	margin: var(--size-4-2) 0;
+	margin: 6px 0;
 }
 
-.onyxmind-message-content p:first-child {
+.onyxmind-message-content p:first-child,
+.onyxmind-part-text p:first-child {
 	margin-top: 0;
 }
 
-.onyxmind-message-content p:last-child {
+.onyxmind-message-content p:last-child,
+.onyxmind-part-text p:last-child {
 	margin-bottom: 0;
 }
 
-.onyxmind-message-content code {
-	background-color: var(--code-background);
-	padding: 2px 4px;
-	border-radius: var(--radius-s);
-	font-family: var(--font-monospace);
-	font-size: var(--font-smaller);
+.onyxmind-message-content ul,
+.onyxmind-message-content ol,
+.onyxmind-part-text ul,
+.onyxmind-part-text ol {
+	margin: 4px 0;
+	padding-left: 18px;
 }
 
-.onyxmind-message-content pre {
-	background-color: var(--code-background);
-	padding: var(--size-4-4);
-	border-radius: var(--radius-m);
-	overflow-x: auto;
+.onyxmind-message-content code,
+.onyxmind-part-text code {
+	background: var(--code-background);
+	padding: 1px 5px;
+	border-radius: 4px;
+	font-size: 12px;
 }
 
-.onyxmind-message-content pre code {
-	background-color: transparent;
-	padding: 0;
+.onyxmind-message-content pre,
+.onyxmind-part-text pre {
+	background: var(--code-background);
+	border: 1px solid var(--onyxmind-line);
+	border-radius: 8px;
+	padding: 8px 10px;
+	overflow: auto;
 }
 
-.onyxmind-message-timestamp {
-	font-size: var(--font-ui-smaller);
-	color: var(--text-faint);
+.onyxmind-part-thinking {
+	background: var(--onyxmind-bg-soft);
+	border-left: 2px solid var(--onyxmind-warning);
+	border-radius: 8px;
+	padding: 6px 10px;
 }
 
-/* Thinking Indicator */
-.onyxmind-thinking {
-	display: flex;
+.onyxmind-part-thinking > summary {
+	list-style: none;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--onyxmind-warning);
+	user-select: none;
+}
+
+.onyxmind-part-thinking > summary::-webkit-details-marker {
+	display: none;
+}
+
+.onyxmind-part-thinking > summary::before {
+	content: '▸ ';
+}
+
+.onyxmind-part-thinking[open] > summary::before {
+	content: '▾ ';
+}
+
+.onyxmind-thinking-content {
+	margin-top: 6px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--onyxmind-muted);
+	white-space: pre-wrap;
+}
+
+.onyxmind-part-tool {
+	border: none;
+	background: transparent;
+	border-radius: 0;
+}
+
+.onyxmind-tool-header {
+	display: grid;
+	grid-template-columns: 16px auto 1fr 16px;
 	align-items: center;
-	gap: var(--size-4-2);
-	padding: var(--size-4-4);
-	color: var(--text-muted);
-	font-style: italic;
+	gap: 8px;
+	min-height: 22px;
+	padding: 2px 0;
+}
+
+.onyxmind-tool-icon {
+	font-size: 12px;
+	text-align: center;
+	color: var(--onyxmind-accent);
+}
+
+.onyxmind-tool-name {
+	font-size: 13px;
+	font-weight: 700;
+	color: #6f63d8;
+}
+
+.onyxmind-tool-title {
+	font-size: 12px;
+	color: var(--onyxmind-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.onyxmind-tool-status-icon {
+	text-align: right;
+	font-size: 12px;
+	color: var(--onyxmind-faint);
+}
+
+.onyxmind-part-tool[data-status="running"] .onyxmind-tool-status-icon {
+	color: var(--onyxmind-accent);
+	animation: onyxmind-pulse 1.1s infinite;
+}
+
+.onyxmind-part-tool[data-status="completed"] .onyxmind-tool-status-icon {
+	color: var(--onyxmind-success);
+}
+
+.onyxmind-part-tool[data-status="error"] .onyxmind-tool-status-icon {
+	color: var(--onyxmind-danger);
+}
+
+.onyxmind-tool-output {
+	margin: 2px 0 4px 24px;
+	border: 1px solid var(--onyxmind-line);
+	border-radius: 8px;
+	background: var(--onyxmind-bg-panel);
+	overflow: hidden;
+}
+
+.onyxmind-tool-output > summary {
+	list-style: none;
+	cursor: pointer;
+	padding: 4px 8px;
+	font-size: 11px;
+	color: var(--onyxmind-faint);
+	border-bottom: 1px solid var(--onyxmind-line);
+}
+
+.onyxmind-tool-output > summary::-webkit-details-marker {
+	display: none;
+}
+
+.onyxmind-tool-output-content pre {
+	margin: 0;
+	padding: 8px;
+	background: var(--code-background);
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+	max-height: 200px;
+	overflow: auto;
+}
+
+.onyxmind-tool-output-error {
+	padding: 8px;
+	font-size: 12px;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	word-break: break-word;
+	color: var(--onyxmind-danger);
+	background: var(--background-modifier-error);
+}
+
+.onyxmind-thinking {
+	padding: 7px 10px;
+	font-size: 12px;
+	color: var(--onyxmind-muted);
+	background: var(--onyxmind-bg-soft);
+	border: 1px dashed var(--onyxmind-line);
+	border-radius: 8px;
 }
 
 .onyxmind-thinking::before {
-	content: '⏳';
-	animation: pulse 1.5s ease-in-out infinite;
+	content: '• ';
+	color: var(--onyxmind-accent);
 }
 
-@keyframes pulse {
-	0%, 100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.5;
-	}
-}
-
-/* Error Message */
 .onyxmind-error {
-	padding: var(--size-4-4);
-	background-color: var(--background-modifier-error);
-	border-left: 3px solid var(--text-error);
-	border-radius: var(--radius-m);
-	color: var(--text-error);
+	padding: 10px 12px;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--onyxmind-danger);
+	background: var(--background-modifier-error);
+	border: 1px solid var(--text-error);
+	border-radius: 8px;
 }
 
-/* Input Container */
+.onyxmind-composer {
+	padding: 8px 10px 10px;
+	border-top: 1px solid var(--onyxmind-line);
+	background: var(--onyxmind-bg-panel);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.onyxmind-session-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.onyxmind-session-list {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	overflow-x: auto;
+	min-width: 0;
+	padding-bottom: 2px;
+}
+
+.onyxmind-session-empty {
+	font-size: 11px;
+	color: var(--onyxmind-faint);
+	padding: 4px 0;
+}
+
+.onyxmind-session-item {
+	border: 1px solid var(--onyxmind-line);
+	background: var(--onyxmind-bg-soft);
+	border-radius: 6px;
+	height: 24px;
+	padding: 0 7px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	flex: 0 0 auto;
+	color: var(--onyxmind-muted);
+	font-family: var(--font-monospace);
+}
+
+.onyxmind-session-item.is-active {
+	border-color: var(--onyxmind-accent);
+	background: var(--onyxmind-accent-soft);
+	color: var(--onyxmind-text);
+}
+
+.onyxmind-session-item:hover {
+	color: var(--onyxmind-text);
+}
+
+.onyxmind-session-item:focus-visible {
+	outline: 2px solid var(--onyxmind-accent);
+	outline-offset: 2px;
+}
+
+.onyxmind-session-index {
+	font-size: 12px;
+	line-height: 1;
+	font-weight: 700;
+}
+
+.onyxmind-session-close {
+	font-size: 12px;
+	line-height: 1;
+	opacity: 0.5;
+}
+
+.onyxmind-session-item:hover .onyxmind-session-close,
+.onyxmind-session-item.is-active .onyxmind-session-close {
+	opacity: 1;
+}
+
+.onyxmind-strip-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex: 0 0 auto;
+}
+
+.onyxmind-icon-button {
+	border: 1px solid var(--onyxmind-line);
+	background: var(--onyxmind-bg-soft);
+	color: var(--onyxmind-muted);
+	border-radius: 6px;
+	height: 24px;
+	min-width: 24px;
+	padding: 0 6px;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.onyxmind-icon-button:hover {
+	color: var(--onyxmind-text);
+}
+
+.onyxmind-icon-button:focus-visible {
+	outline: 2px solid var(--onyxmind-accent);
+	outline-offset: 2px;
+}
+
 .onyxmind-input-container {
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-4-2);
-	padding: var(--size-4-4);
-	border-top: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary);
+	gap: 8px;
+	padding: 8px;
+	background: var(--onyxmind-bg-shell);
+	border: 1px solid var(--onyxmind-line);
+	border-radius: 10px;
 }
 
 .onyxmind-input {
 	width: 100%;
-	min-height: 60px;
-	max-height: 200px;
-	padding: var(--size-4-3);
-	background-color: var(--background-primary-alt);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	color: var(--text-normal);
-	font-family: var(--font-text);
-	font-size: var(--font-ui-medium);
+	min-height: 96px;
+	max-height: 220px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--onyxmind-text);
+	font-family: var(--font-monospace);
+	font-size: 13px;
+	line-height: 1.5;
 	resize: none;
 	overflow-y: auto;
 }
 
 .onyxmind-input:focus {
 	outline: none;
-	border-color: var(--interactive-accent);
-}
-
-.onyxmind-input:focus-visible {
-	outline: 2px solid var(--interactive-accent);
-	outline-offset: 2px;
 }
 
 .onyxmind-input::placeholder {
-	color: var(--text-faint);
+	color: var(--onyxmind-faint);
 }
 
-.onyxmind-send-button {
-	align-self: flex-end;
-	padding: var(--size-4-2) var(--size-4-6);
-	background-color: var(--interactive-accent);
+.onyxmind-slash-menu {
+	display: flex;
+	flex-direction: column;
+	max-height: 220px;
+	overflow-y: auto;
+	border: 1px solid var(--onyxmind-line);
+	border-radius: 8px;
+	background: var(--onyxmind-bg-panel);
+}
+
+.onyxmind-slash-item {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	width: 100%;
+	padding: 6px 10px;
 	border: none;
-	border-radius: var(--radius-m);
-	color: var(--text-on-accent);
-	font-weight: var(--font-semibold);
+	border-bottom: 1px solid var(--onyxmind-line);
+	background: transparent;
+	color: var(--onyxmind-text);
+	text-align: left;
+	font-family: var(--font-monospace);
 	cursor: pointer;
-	transition: background-color 0.2s;
-	min-height: 44px;
-	min-width: 80px;
 }
 
-/* Button row (abort + send) */
+.onyxmind-slash-item:last-child {
+	border-bottom: none;
+}
+
+.onyxmind-slash-item:hover,
+.onyxmind-slash-item.is-selected {
+	background: var(--onyxmind-accent-soft);
+}
+
+.onyxmind-slash-item:focus-visible {
+	outline: 2px solid var(--onyxmind-accent);
+	outline-offset: -2px;
+}
+
+.onyxmind-slash-name {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--onyxmind-text);
+}
+
+.onyxmind-slash-description {
+	font-size: 11px;
+	line-height: 1.35;
+	color: var(--onyxmind-muted);
+}
+
+.onyxmind-slash-empty {
+	padding: 8px 10px;
+	font-size: 11px;
+	color: var(--onyxmind-faint);
+}
+
+.onyxmind-input-footer {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 11px;
+	color: var(--onyxmind-faint);
+}
+
+.onyxmind-footer-item {
+	padding: 0;
+}
+
 .onyxmind-button-row {
 	display: flex;
 	justify-content: flex-end;
-	gap: var(--size-4-2);
-}
-
-/* Abort / Stop button */
-.onyxmind-abort-button {
-	padding: var(--size-4-2) var(--size-4-6);
-	background-color: var(--background-modifier-error);
-	border: none;
-	border-radius: var(--radius-m);
-	color: var(--text-error);
-	font-weight: var(--font-semibold);
-	cursor: pointer;
-	transition: background-color 0.2s;
-	min-height: 44px;
-	min-width: 80px;
-	display: flex;
-	align-items: center;
 	gap: 6px;
 }
 
-.onyxmind-abort-button::before {
-	content: '■';
-	font-size: 0.72em;
-	line-height: 1;
-	opacity: 0.9;
+.onyxmind-send-button,
+.onyxmind-abort-button {
+	border: 1px solid var(--onyxmind-line);
+	border-radius: 7px;
+	height: 28px;
+	padding: 0 12px;
+	font-family: var(--font-interface);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
 }
 
-.onyxmind-abort-button:hover {
-	filter: brightness(1.15);
-}
-
-.onyxmind-abort-button:focus-visible {
-	outline: 2px solid var(--text-error);
-	outline-offset: 2px;
+.onyxmind-send-button {
+	background: var(--onyxmind-accent-soft);
+	border-color: rgba(139, 125, 255, 0.45);
+	color: #5b4dc7;
 }
 
 .onyxmind-send-button:hover {
-	background-color: var(--interactive-accent-hover);
+	filter: brightness(0.97);
 }
 
 .onyxmind-send-button:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--onyxmind-accent);
 	outline-offset: 2px;
 }
 
 .onyxmind-send-button:disabled {
-	opacity: 0.5;
+	opacity: 0.6;
 	cursor: not-allowed;
 }
 
-/* Mobile Adjustments */
-.is-mobile .onyxmind-message {
-	max-width: 95%;
-}
-
-.is-mobile .onyxmind-input-container {
-	padding: var(--size-4-2);
-}
-
-/* Scrollbar Styling */
-.onyxmind-messages::-webkit-scrollbar {
-	width: 8px;
-}
-
-.onyxmind-messages::-webkit-scrollbar-track {
-	background: var(--background-primary);
-}
-
-.onyxmind-messages::-webkit-scrollbar-thumb {
-	background: var(--background-modifier-border);
-	border-radius: var(--radius-s);
-}
-
-.onyxmind-messages::-webkit-scrollbar-thumb:hover {
-	background: var(--text-faint);
-}
-
-/* ── Message body (multi-part layout) ──────────────────────────────────── */
-.onyxmind-message-body {
-	display: flex;
-	flex-direction: column;
-	gap: 5px;
-	min-width: 0;
-}
-
-/* ── Thinking block ───────────────────────────────────────────────────── */
-.onyxmind-part-thinking {
-	border-left: 2px solid var(--color-purple, #8b5cf6);
-	padding: 4px 10px;
-	border-radius: 0 var(--radius-s) var(--radius-s) 0;
-	opacity: 0.8;
-	font-size: 0.88em;
-}
-
-.onyxmind-part-thinking > summary {
-	cursor: pointer;
-	color: var(--text-muted);
-	font-style: italic;
-	list-style: none;
-	padding: 2px 0;
-	user-select: none;
-}
-
-.onyxmind-part-thinking > summary::-webkit-details-marker { display: none; }
-.onyxmind-part-thinking > summary::before { content: '▸ '; }
-.onyxmind-part-thinking[open] > summary::before { content: '▾ '; }
-
-.onyxmind-thinking-content {
-	padding: 6px 0 2px;
-	color: var(--text-muted);
-	white-space: pre-wrap;
-	font-size: 0.85em;
-	line-height: 1.5;
-	max-height: 160px;
-	overflow-y: auto;
-}
-
-/* ── Tool call cards ──────────────────────────────────────────────────── */
-.onyxmind-part-tool {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	background: var(--background-primary);
-	font-size: 0.85em;
-	overflow: hidden;
-	transition: border-color 0.2s;
-}
-
-.onyxmind-part-tool[data-status="running"]   { border-color: var(--interactive-accent); }
-.onyxmind-part-tool[data-status="completed"] { border-color: var(--color-green, #22c55e); }
-.onyxmind-part-tool[data-status="error"]     { border-color: var(--color-red, #ef4444); }
-
-/* Card header */
-.onyxmind-tool-header {
-	display: flex;
-	align-items: center;
-	gap: 7px;
-	padding: 6px 10px;
-	background: var(--background-secondary);
-	border-left: 3px solid var(--text-faint);
-	min-height: 32px;
-	transition: border-left-color 0.2s;
-}
-
-.onyxmind-part-tool[data-status="running"]   .onyxmind-tool-header { border-left-color: var(--interactive-accent); }
-.onyxmind-part-tool[data-status="completed"] .onyxmind-tool-header { border-left-color: var(--color-green, #22c55e); }
-.onyxmind-part-tool[data-status="error"]     .onyxmind-tool-header { border-left-color: var(--color-red, #ef4444); }
-
-.onyxmind-tool-icon {
-	font-family: var(--font-monospace);
-	font-size: 0.85em;
-	color: var(--text-faint);
-	flex-shrink: 0;
-	width: 16px;
-	text-align: center;
-}
-
-.onyxmind-tool-name {
-	font-weight: 600;
-	color: var(--text-normal);
-	font-family: var(--font-monospace);
-	font-size: 0.9em;
-	flex-shrink: 0;
-}
-
-.onyxmind-tool-title {
-	color: var(--text-muted);
-	flex: 1;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	font-size: 0.88em;
-	min-width: 0;
-}
-
-/* Status icon */
-.onyxmind-tool-status-icon {
-	flex-shrink: 0;
-	font-size: 0.9em;
-	line-height: 1;
-	color: var(--text-faint);
-}
-
-.onyxmind-part-tool[data-status="running"] .onyxmind-tool-status-icon {
-	display: inline-block;
-	animation: spin 0.8s linear infinite;
-	color: var(--interactive-accent);
-}
-
-.onyxmind-part-tool[data-status="completed"] .onyxmind-tool-status-icon { color: var(--color-green, #22c55e); }
-.onyxmind-part-tool[data-status="error"]     .onyxmind-tool-status-icon { color: var(--color-red, #ef4444); }
-
-/* Output collapsible */
-.onyxmind-tool-output {
-	border-top: 1px solid var(--background-modifier-border);
-}
-
-.onyxmind-tool-output > summary {
-	padding: 3px 10px;
-	cursor: pointer;
-	color: var(--text-faint);
-	font-size: 0.82em;
-	list-style: none;
-	user-select: none;
-}
-
-.onyxmind-tool-output > summary:hover {
-	color: var(--text-muted);
-	background: var(--background-modifier-hover);
-}
-
-.onyxmind-tool-output > summary::-webkit-details-marker { display: none; }
-.onyxmind-tool-output > summary::before { content: '▸ '; }
-.onyxmind-tool-output[open] > summary::before { content: '▾ '; }
-
-.onyxmind-tool-output-content pre {
-	margin: 0;
-	padding: 8px 10px;
-	background: var(--code-background);
-	overflow-x: auto;
-	white-space: pre-wrap;
-	word-break: break-all;
-	font-family: var(--font-monospace);
-	font-size: 0.82em;
-	line-height: 1.5;
-	max-height: 200px;
-	overflow-y: auto;
-	color: var(--text-normal);
-}
-
-.onyxmind-tool-output-error {
-	padding: 8px 10px;
-	color: var(--text-error);
-	font-size: 0.88em;
-	white-space: pre-wrap;
-	word-break: break-word;
+.onyxmind-abort-button {
 	background: var(--background-modifier-error);
+	border-color: rgba(199, 73, 73, 0.35);
+	color: var(--onyxmind-danger);
 }
 
-/* Spin animation */
-@keyframes spin {
-	from { transform: rotate(0deg); }
-	to   { transform: rotate(360deg); }
+.onyxmind-abort-button:hover {
+	filter: brightness(0.98);
+}
+
+.onyxmind-abort-button:focus-visible {
+	outline: 2px solid var(--onyxmind-danger);
+	outline-offset: 2px;
+}
+
+.onyxmind-messages::-webkit-scrollbar,
+.onyxmind-input::-webkit-scrollbar,
+.onyxmind-session-list::-webkit-scrollbar,
+.onyxmind-slash-menu::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+.onyxmind-messages::-webkit-scrollbar-thumb,
+.onyxmind-input::-webkit-scrollbar-thumb,
+.onyxmind-session-list::-webkit-scrollbar-thumb,
+.onyxmind-slash-menu::-webkit-scrollbar-thumb {
+	background: var(--onyxmind-line);
+	border-radius: 999px;
+}
+
+@keyframes onyxmind-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.45;
+	}
+}
+
+.is-mobile .onyxmind-brand-row {
+	padding: 9px 10px;
+}
+
+.is-mobile .onyxmind-messages {
+	padding: 10px;
+}
+
+.is-mobile .onyxmind-composer {
+	padding: 8px;
+}
+
+.is-mobile .onyxmind-input {
+	min-height: 88px;
 }

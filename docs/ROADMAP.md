@@ -8,9 +8,9 @@
 |------|------|--------|
 | 阶段 0: 准备工作 | ✅ 完成 | 100% |
 | 阶段 1: MVP 核心功能 | ✅ 完成 | 100% |
-| 阶段 2: 增强功能 | 🔄 进行中 | 60% |
-| 阶段 3: 编辑器集成 | ⏳ 待开始 | 30% |
-| 阶段 4: 优化和完善 | ⏳ 待开始 | 0% |
+| 阶段 2: 增强功能 | 🔄 进行中 | 82% |
+| 阶段 3: 编辑器集成 | 🔄 进行中 | 35% |
+| 阶段 4: 优化和完善 | 🔄 进行中 | 12% |
 | 阶段 5: 发布准备 | ⏳ 待开始 | 0% |
 
 ---
@@ -56,7 +56,7 @@
 - [x] 高级设置（超时、重试次数、流式响应开关）
 
 ### 1.3 聊天界面 ✅
-**实现文件**: `src/views/chat-view.ts`
+**实现文件**: `src/views/chat-view.tsx`
 
 - [x] 消息列表容器（支持 Markdown 渲染）
 - [x] 自动扩展输入框
@@ -67,6 +67,7 @@
 - [x] 错误消息显示
 - [x] 流式响应逐字渲染
 - [x] 新建会话 / 清空消息操作
+- [x] React 组件化重构（替代旧 DOM imperative 渲染）
 
 ### 1.4 命令注册 ✅
 **实现文件**: `src/main.ts`
@@ -96,8 +97,8 @@
 - [x] Thinking 指示器（loading 状态）
 - [x] 流式错误处理（AbortError 静默过滤）
 - [x] 用户中止（本地 + 服务端双重中断）
-- [ ] **thinking 内容折叠展示**（StreamChunkThinking 已接收，UI 尚未渲染）
-- [ ] **tool_use 工具调用状态渲染**（事件已接收，UI 尚未展示）
+- [x] thinking 内容折叠展示（`details` 折叠块）
+- [x] tool_use 工具调用状态渲染（running/completed/error 卡片 + 输出）
 
 ### 2.2 会话管理 🔄
 - [x] 会话 CRUD（创建、获取、删除、设活跃）
@@ -105,21 +106,33 @@
 - [x] 会话序列化/反序列化（toJSON/fromJSON）
 - [x] 新建会话按钮
 - [x] 清空消息按钮
-- [ ] **会话侧边栏 / 选择器 UI**（多会话切换入口缺失）
+- [x] 会话侧边栏 / 选择器 UI（sidebar 紧凑模式，序号 1/2/3...）
+- [x] active session 切换时拉取并渲染历史消息
+- [x] 按 vault directory 作用域隔离会话（`session.list` 过滤 `directory=<vault_path>`）
+- [x] active session 上限控制（默认 3，可在 settings 配置）
+- [x] 会话管理与消息处理拆分（`SessionManager` / `ChatService`）
+- [x] 新建会话默认设为 active
 - [ ] **会话持久化到磁盘**（目前重启后丢失，需接入 plugin.loadData/saveData）
 - [ ] **会话标题自动生成**（根据首条消息智能命名）
 
-### 2.3 上下文感知 ⏳
+### 2.3 Slash 命令 ✅
+- [x] 输入 `/` 触发自动补全
+- [x] 拉取并展示全部可用 command（OpenCode `command.list`）
+- [x] 输入过滤（name / description）
+- [x] 键盘交互（↑/↓ 选择，Enter/Tab 插入，Esc 关闭）
+- [x] 鼠标悬停与点击选择
+
+### 2.4 上下文感知 ⏳
 - [ ] 当前笔记上下文自动注入（打开文件变化时更新）
 - [ ] Vault 文件树结构感知
 - [ ] `@文件名` 手动引用语法（快速插入笔记内容到对话）
 - [ ] 上下文范围配置（当前笔记 / 当前文件夹 / 全库）
 
-### 2.4 文件操作可视化 ⏳
-- [ ] 解析 `tool_use` 流式事件（pending / running / completed / error 状态）
-- [ ] 消息中内联展示工具卡片（文件名 + 操作类型 + 状态图标）
-- [ ] 操作详情展开/折叠
-- [ ] 操作结果反馈（成功/失败/跳过）
+### 2.5 文件操作可视化 ✅
+- [x] 解析 `tool_use` 流式事件（pending / running / completed / error 状态）
+- [x] 消息中内联展示工具卡片（工具名 + 状态图标）
+- [x] 操作详情展开/折叠
+- [x] 操作结果反馈（成功/失败）
 
 ---
 
@@ -142,7 +155,7 @@
 
 ---
 
-## 阶段 4: 优化和完善 ⏳
+## 阶段 4: 优化和完善 🔄
 
 ### 4.1 性能优化
 - [ ] 消息列表虚拟滚动（长对话性能）
@@ -206,9 +219,9 @@
 | 里程碑 | 状态 | 交付物 |
 |--------|------|--------|
 | M1: MVP 完成 | ✅ 已完成 | 基础对话、流式响应、设置页面 |
-| M2: 增强功能完成 | 🔄 进行中 | 会话持久化、工具调用可视化、上下文感知 |
-| M3: 编辑器集成完成 | ⏳ 待开始 | 选中操作命令、右键菜单 |
-| M4: 优化完成 | ⏳ 待开始 | 性能、UX、代码质量 |
+| M2: 增强功能完成 | 🔄 进行中（82%） | 多 session 管理、tool/thinking 可视化、slash command（剩余：持久化/上下文） |
+| M3: 编辑器集成完成 | 🔄 进行中（35%） | 选中操作命令、右键菜单 |
+| M4: 优化完成 | 🔄 进行中（12%） | 性能、UX、代码质量 |
 | M5: 发布 | ⏳ 待开始 | 提交社区插件 |
 
 ---
@@ -217,13 +230,13 @@
 
 按优先级排序：
 
-1. **thinking 内容 UI 渲染** — StreamChunkThinking 已接收，加折叠展示即可
-2. **tool_use 工具调用状态卡片** — 让用户看到 AI 在操作哪些文件
-3. **会话持久化** — 接入 `plugin.loadData/saveData`，重启不丢失历史
-4. **会话选择器 UI** — 多会话切换，查看历史对话
-5. **`explain-selection` / `improve-writing` 命令** — 补全编辑器命令集
-6. **设置页面"测试连接"按钮** — 提升配置体验
-7. **图标按钮去 emoji** — 用 `setIcon()` 替换 ➕🗑️，符合 Obsidian 规范
+1. **会话持久化** — 接入 `plugin.loadData/saveData`，重启不丢失历史
+2. **`explain-selection` / `improve-writing` 命令** — 补全编辑器命令集
+3. **上下文注入与 `@文件名` 引用** — 强化上下文感知能力
+4. **设置页面“测试连接”按钮** — 提升配置体验
+5. **`searchFiles` / `searchText` API 对齐修复** — 消除 TODO 功能缺口
+6. **移动端与响应式适配** — 验证 sidebar 与输入体验
+7. **会话标题自动生成** — 提升多会话可读性
 
 ---
 
@@ -231,11 +244,11 @@
 
 | 问题 | 位置 | 优先级 |
 |------|------|--------|
-| `searchFiles` / `searchText` 被注释，API 类型不匹配 | `opencode-service.ts:463` | 中 |
-| `getChatView()` 使用 `as ChatView` 类型断言 | `main.ts:139` | 低 |
-| `updateSettings()` 直接调用 `initialize()` 可能导致并发冲突 | `opencode-service.ts:531` | 中 |
-| `execSync` 在渲染进程使用 | `opencode-service.ts:98` | 低（目前可用） |
-| `MarkdownRenderer.renderMarkdown` 传入 `this as any` | `chat-view.ts:296` | 低 |
+| `searchFiles` / `searchText` 被注释，API 类型不匹配 | `opencode-service.ts:690` / `opencode-service.ts:723` | 中 |
+| `getChatView()` 使用 `as ChatView` 类型断言 | `main.ts:145` | 低 |
+| `updateSettings()` 直接调用 `initialize()` 可能导致并发冲突 | `opencode-service.ts:755` | 中 |
+| `execSync` 在渲染进程使用 | `opencode-service.ts:118` | 低（目前可用） |
+| `MarkdownRenderer.renderMarkdown` 传入 `plugin as any` | `chat-view.tsx:99` | 低 |
 
 ---
 

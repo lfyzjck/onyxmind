@@ -3,7 +3,7 @@
  * Manages conversation sessions and their history
  */
 
-import type { OpencodeService, Message } from './opencode-service';
+import type { OpencodeService, Message, RemoteSessionSummary } from './opencode-service';
 
 export interface Session {
 	id: string;
@@ -13,35 +13,36 @@ export interface Session {
 	updatedAt: number;
 }
 
-/**
- * Callbacks for real-time message events
- */
-export interface MessageEventCallbacks {
-	onMessageStart?: (messageId: string) => void;
-	onTextDelta?: (text: string) => void;
-	onThinking?: (thinking: string) => void;
-	onMessageComplete?: (message: Message) => void;
-	onError?: (error: any) => void;
-	onStatusChange?: (status: 'busy' | 'idle') => void;
+export type CreateSessionError = 'limit-reached' | 'service-error';
+
+export interface CreateSessionResult {
+	session: Session | null;
+	error?: CreateSessionError;
 }
 
 export class SessionManager {
 	private sessions: Map<string, Session> = new Map();
 	private activeSessionId: string | null = null;
 	private opencodeService: OpencodeService;
+	private getMaxActiveSessions: () => number;
 
-	constructor(opencodeService: OpencodeService) {
+	constructor(opencodeService: OpencodeService, getMaxActiveSessions: () => number) {
 		this.opencodeService = opencodeService;
+		this.getMaxActiveSessions = getMaxActiveSessions;
 	}
 
 	/**
 	 * Create a new session
 	 */
-	async createSession(title?: string): Promise<Session | null> {
+	async createSession(title?: string): Promise<CreateSessionResult> {
+		if (this.isAtSessionLimit()) {
+			return { session: null, error: 'limit-reached' };
+		}
+
 		const sessionId = await this.opencodeService.createSession(title);
 
 		if (!sessionId) {
-			return null;
+			return { session: null, error: 'service-error' };
 		}
 
 		const session: Session = {
@@ -53,9 +54,27 @@ export class SessionManager {
 		};
 
 		this.sessions.set(sessionId, session);
-		this.activeSessionId = sessionId;
+		this.setActiveSession(sessionId);
 
-		return session;
+		return { session };
+	}
+
+	/**
+	 * Check whether session creation is blocked by the configured limit
+	 */
+	isAtSessionLimit(): boolean {
+		return this.sessions.size >= this.getSessionLimit();
+	}
+
+	/**
+	 * Current configured max active session count
+	 */
+	getSessionLimit(): number {
+		const raw = this.getMaxActiveSessions();
+		if (!Number.isFinite(raw)) {
+			return 3;
+		}
+		return Math.max(1, Math.floor(raw));
 	}
 
 	/**
@@ -76,6 +95,13 @@ export class SessionManager {
 	}
 
 	/**
+	 * Get active session ID
+	 */
+	getActiveSessionId(): string | null {
+		return this.activeSessionId;
+	}
+
+	/**
 	 * Set the active session
 	 */
 	setActiveSession(id: string): boolean {
@@ -84,6 +110,17 @@ export class SessionManager {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Activate a session and hydrate its message history from OpenCode
+	 */
+	async activateSession(id: string): Promise<boolean> {
+		if (!this.setActiveSession(id)) {
+			return false;
+		}
+		await this.refreshActiveSessionMessages();
+		return true;
 	}
 
 	/**
@@ -101,9 +138,10 @@ export class SessionManager {
 		// Remove from local storage
 		this.sessions.delete(id);
 
-		// If this was the active session, clear it
+		// If this was the active session, switch to the most recently updated remaining session
 		if (this.activeSessionId === id) {
-			this.activeSessionId = null;
+			const next = this.getAllSessions()[0];
+			this.activeSessionId = next ? next.id : null;
 		}
 
 		return true;
@@ -182,137 +220,76 @@ export class SessionManager {
 	}
 
 	/**
-	 * Send a message and subscribe to real-time events
-	 * Based on SSE event stream pattern from tests/sse-prompt-test.js
+	 * Refresh message history for the currently active session
 	 */
-	async sendMessageWithEvents(
-		sessionId: string,
-		prompt: string,
-		callbacks?: MessageEventCallbacks
-	): Promise<Message | null> {
-		const session = this.sessions.get(sessionId);
-		if (!session) {
-			console.error('[OnyxMind] Session not found:', sessionId);
-			return null;
+	async refreshActiveSessionMessages(): Promise<boolean> {
+		if (!this.activeSessionId) {
+			return false;
 		}
-
-		try {
-			// Add user message to session
-			const userMessage: Message = {
-				role: 'user',
-				content: prompt,
-				timestamp: Date.now()
-			};
-			this.addMessage(sessionId, userMessage);
-
-			// Send async prompt
-			await this.opencodeService.sendPromptAsync(sessionId, prompt);
-
-			// Subscribe to SSE events and collect response
-			const assistantMessage = await this.collectResponseFromEvents(sessionId, callbacks);
-
-			if (assistantMessage) {
-				this.addMessage(sessionId, assistantMessage);
-				return assistantMessage;
-			}
-
-			return null;
-
-		} catch (error) {
-			console.error('[OnyxMind Error] Failed to send message:', error);
-			callbacks?.onError?.(error);
-			return null;
-		}
+		return this.refreshSessionMessages(this.activeSessionId);
 	}
 
 	/**
-	 * Collect response from SSE event stream
-	 * Pattern based on tests/sse-prompt-test.js
+	 * Refresh message history for a specific session
 	 */
-	private async collectResponseFromEvents(
-		sessionId: string,
-		callbacks?: MessageEventCallbacks
-	): Promise<Message | null> {
-		const events = await this.opencodeService.subscribeToEvents();
-		if (!events) {
-			return null;
+	async refreshSessionMessages(sessionId: string): Promise<boolean> {
+		const session = this.sessions.get(sessionId);
+		if (!session) {
+			return false;
 		}
 
-		let messageId: string | null = null;
-		let fullText = '';
-		const parts: any[] = [];
-		let error: any = null;
-		let isIdle = false;
-
-		try {
-			for await (const event of events) {
-				switch (event.type) {
-					case 'message.updated':
-						if (event.properties?.info?.role === 'assistant') {
-							messageId = event.properties.info.id;
-							if (messageId) callbacks?.onMessageStart?.(messageId);
-
-							if (event.properties.info.error) {
-								error = event.properties.info.error;
-								callbacks?.onError?.(error);
-							}
-						}
-						break;
-
-					case 'message.part.updated':
-						if (event.properties?.part) {
-							const part = event.properties.part;
-							parts.push(part);
-
-							if (part.type === 'text' && part.text) {
-								fullText += part.text;
-								callbacks?.onTextDelta?.(part.text);
-							} else if (part.type === 'thinking' && part.thinking) {
-								callbacks?.onThinking?.(part.thinking);
-							}
-						}
-						break;
-
-					case 'session.status':
-						if (event.properties?.status) {
-							const status = event.properties.status.type;
-							callbacks?.onStatusChange?.(status);
-						}
-						break;
-
-					case 'session.idle':
-						isIdle = true;
-						callbacks?.onStatusChange?.('idle');
-						break;
-				}
-
-				// Exit when session becomes idle
-				if (isIdle) {
-					// Wait a bit to ensure all events are received
-					await new Promise(resolve => setTimeout(resolve, 500));
-					break;
-				}
-			}
-
-			// Create assistant message
-			if (fullText || error) {
-				const assistantMessage: Message = {
-					role: 'assistant',
-					content: fullText,
-					timestamp: Date.now(),
-					error: error
-				};
-
-				callbacks?.onMessageComplete?.(assistantMessage);
-				return assistantMessage;
-			}
-
-			return null;
-
-		} catch (error) {
-			console.error('[OnyxMind Error] Event stream error:', error);
-			callbacks?.onError?.(error);
-			return null;
+		const messages = await this.opencodeService.getSessionMessages(sessionId);
+		if (!messages) {
+			return false;
 		}
+
+		session.messages = messages;
+		const latestTimestamp = messages.length > 0
+			? messages[messages.length - 1]!.timestamp
+			: session.updatedAt;
+		session.updatedAt = Math.max(session.updatedAt, latestTimestamp);
+		return true;
+	}
+
+	/**
+	 * Refresh local session index from OpenCode session.list filtered by current vault directory
+	 */
+	async refreshSessionsFromService(): Promise<boolean> {
+		const remoteSessions = await this.opencodeService.listSessions();
+		if (!remoteSessions) {
+			return false;
+		}
+
+		const previousSessions = this.sessions;
+		const next = new Map<string, Session>();
+		for (const remote of remoteSessions) {
+			const existing = this.sessions.get(remote.id);
+			next.set(remote.id, this.mergeRemoteSession(remote, existing));
+		}
+
+		// Keep the current active local session if remote list is temporarily stale.
+		if (this.activeSessionId && !next.has(this.activeSessionId)) {
+			const activeLocal = previousSessions.get(this.activeSessionId);
+			if (activeLocal) {
+				next.set(this.activeSessionId, activeLocal);
+			}
+		}
+
+		this.sessions = next;
+		if (!this.activeSessionId || !this.sessions.has(this.activeSessionId)) {
+			const nextActive = this.getAllSessions()[0];
+			this.activeSessionId = nextActive ? nextActive.id : null;
+		}
+		return true;
+	}
+
+	private mergeRemoteSession(remote: RemoteSessionSummary, existing?: Session): Session {
+		return {
+			id: remote.id,
+			title: remote.title || existing?.title || 'Session',
+			messages: existing?.messages ?? [],
+			createdAt: existing?.createdAt ?? remote.createdAt,
+			updatedAt: Math.max(existing?.updatedAt ?? 0, remote.updatedAt),
+		};
 	}
 }

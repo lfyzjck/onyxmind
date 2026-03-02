@@ -2,19 +2,25 @@ import { Plugin, WorkspaceLeaf, Notice } from 'obsidian';
 import { DEFAULT_SETTINGS, OnyxMindSettings, OnyxMindSettingTab } from "./settings";
 import { OpencodeService } from "./services/opencode-service";
 import { SessionManager } from "./services/session-manager";
+import { ChatService } from "./services/chat-service";
 import { ChatView, VIEW_TYPE_CHAT } from "./views/chat-view";
 
 export default class OnyxMindPlugin extends Plugin {
 	settings: OnyxMindSettings;
 	opencodeService: OpencodeService;
 	sessionManager: SessionManager;
+	chatService: ChatService;
 
 	async onload() {
 		await this.loadSettings();
 
 		// Initialize services
 		this.opencodeService = new OpencodeService(this.app, this.settings);
-		this.sessionManager = new SessionManager(this.opencodeService);
+		this.sessionManager = new SessionManager(
+			this.opencodeService,
+			() => this.settings.maxActiveSessions
+		);
+		this.chatService = new ChatService(this.opencodeService, this.sessionManager);
 
 		// Initialize OpenCode client
 		const initialized = await this.opencodeService.initialize();
