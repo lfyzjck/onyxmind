@@ -4,26 +4,28 @@
 
 ## 当前进度总览
 
-| 阶段 | 状态 | 完成度 |
-|------|------|--------|
-| 阶段 0: 准备工作 | ✅ 完成 | 100% |
-| 阶段 1: MVP 核心功能 | ✅ 完成 | 100% |
-| 阶段 2: 增强功能 | 🔄 进行中 | 82% |
-| 阶段 3: 编辑器集成 | 🔄 进行中 | 35% |
-| 阶段 4: 优化和完善 | 🔄 进行中 | 12% |
-| 阶段 5: 发布准备 | ⏳ 待开始 | 0% |
+| 阶段                 | 状态      | 完成度 |
+| -------------------- | --------- | ------ |
+| 阶段 0: 准备工作     | ✅ 完成   | 100%   |
+| 阶段 1: MVP 核心功能 | ✅ 完成   | 100%   |
+| 阶段 2: 增强功能     | 🔄 进行中 | 82%    |
+| 阶段 3: 编辑器集成   | 🔄 进行中 | 35%    |
+| 阶段 4: 优化和完善   | 🔄 进行中 | 12%    |
+| 阶段 5: 发布准备     | ⏳ 待开始 | 0%     |
 
 ---
 
 ## 阶段 0: 准备工作 ✅
 
 ### 环境搭建
+
 - [x] 基础项目结构
 - [x] 安装 OpenCode SDK (`@opencode-ai/sdk`)
 - [x] 配置 TypeScript 类型定义
 - [x] 设置开发环境和热重载
 
 ### 技术调研
+
 - [x] 研究 OpenCode SDK API（v2）
 - [x] 实现 OpenCode 本地服务器启动与连接
 - [x] 验证流式响应（SSE 事件流）
@@ -34,6 +36,7 @@
 ## 阶段 1: MVP 核心功能 ✅
 
 ### 1.1 OpenCode 集成 ✅
+
 **实现文件**: `src/services/opencode-service.ts`
 
 - [x] `initialize()` - 启动内嵌 OpenCode 服务器，配置模型、Provider、CORS
@@ -47,6 +50,7 @@
 - [x] PATH 增强（修复 GUI 环境找不到 opencode 二进制的问题）
 
 ### 1.2 设置页面 ✅
+
 **实现文件**: `src/settings.ts`
 
 - [x] OpenCode 服务 URL 配置
@@ -56,6 +60,7 @@
 - [x] 高级设置（超时、重试次数、流式响应开关）
 
 ### 1.3 聊天界面 ✅
+
 **实现文件**: `src/views/chat-view.tsx`
 
 - [x] 消息列表容器（支持 Markdown 渲染）
@@ -70,6 +75,7 @@
 - [x] React 组件化重构（替代旧 DOM imperative 渲染）
 
 ### 1.4 命令注册 ✅
+
 **实现文件**: `src/main.ts`
 
 - [x] Ribbon 图标（message-square）
@@ -79,6 +85,7 @@
 - [x] 设置页面注册
 
 ### 1.5 Agent 系统提示词 ✅
+
 **实现文件**: `src/services/agent-prompt.ts`
 
 - [x] Vault 路径感知（自动注入绝对路径）
@@ -93,6 +100,7 @@
 ## 阶段 2: 增强功能 🔄
 
 ### 2.1 流式响应 ✅
+
 - [x] content 增量文本实时渲染
 - [x] Thinking 指示器（loading 状态）
 - [x] 流式错误处理（AbortError 静默过滤）
@@ -101,6 +109,7 @@
 - [x] tool_use 工具调用状态渲染（running/completed/error 卡片 + 输出）
 
 ### 2.2 会话管理 🔄
+
 - [x] 会话 CRUD（创建、获取、删除、设活跃）
 - [x] 消息历史管理（增加、清空）
 - [x] 会话序列化/反序列化（toJSON/fromJSON）
@@ -116,6 +125,7 @@
 - [ ] **会话标题自动生成**（根据首条消息智能命名）
 
 ### 2.3 Slash 命令 ✅
+
 - [x] 输入 `/` 触发自动补全
 - [x] 拉取并展示全部可用 command（OpenCode `command.list`）
 - [x] 输入过滤（name / description）
@@ -123,12 +133,14 @@
 - [x] 鼠标悬停与点击选择
 
 ### 2.4 上下文感知 ⏳
+
 - [ ] 当前笔记上下文自动注入（打开文件变化时更新）
 - [ ] Vault 文件树结构感知
 - [ ] `@文件名` 手动引用语法（快速插入笔记内容到对话）
 - [ ] 上下文范围配置（当前笔记 / 当前文件夹 / 全库）
 
 ### 2.5 文件操作可视化 ✅
+
 - [x] 解析 `tool_use` 流式事件（pending / running / completed / error 状态）
 - [x] 消息中内联展示工具卡片（工具名 + 状态图标）
 - [x] 操作详情展开/折叠
@@ -139,6 +151,7 @@
 ## 阶段 3: 编辑器集成 🔄
 
 ### 3.1 编辑器命令 🔄
+
 **部分实现** — `ask-about-note` 和 `summarize-note` 已在 `main.ts` 中注册
 
 - [x] `ask-about-note` - 询问当前笔记（已实现）
@@ -149,6 +162,7 @@
 - [ ] 命令与聊天视图联动（结果直接在聊天面板显示，当前已实现部分）
 
 ### 3.2 上下文菜单 ⏳
+
 - [ ] 注册编辑器右键菜单
 - [ ] 选中文本后显示 AI 操作子菜单
 - [ ] 菜单项图标和快捷说明
@@ -158,18 +172,21 @@
 ## 阶段 4: 优化和完善 🔄
 
 ### 4.1 性能优化
+
 - [ ] 消息列表虚拟滚动（长对话性能）
 - [ ] 防抖输入处理
 - [ ] Markdown 渲染异步化（避免阻塞 UI）
 - [ ] 服务初始化失败重试（当前设置变更后会立即重新 initialize，可能冲突）
 
 ### 4.2 错误处理完善
+
 - [ ] 网络状态检测（显示 offline/connecting 状态）
 - [ ] 服务未就绪时的友好引导（当前仅 Notice 提示）
 - [ ] `searchFiles` / `searchText` API 对齐修复（当前标注为 TODO）
 - [ ] 错误日志持久化
 
 ### 4.3 UI/UX 改进
+
 - [ ] 移动端适配（触摸目标 ≥ 44×44px，布局响应式）
 - [ ] 消息 Copy 按钮
 - [ ] 消息 Regenerate 按钮
@@ -179,12 +196,14 @@
 - [ ] 主题适配（确保 dark/light 均正常显示）
 
 ### 4.4 代码质量
+
 - [ ] 消除所有 `as any` 类型断言（SDK 类型定义完善后）
 - [ ] `getChatView()` 中的 `as ChatView` 替换为 `instanceof` 检查
 - [ ] `execSync`/`child_process` 安全性评估（考虑替代方案）
 - [ ] ESLint 全量通过（eslint-plugin-obsidianmd）
 
 ### 4.5 测试
+
 - [ ] OpencodeService 单元测试
 - [ ] SessionManager 单元测试
 - [ ] 端到端集成测试
@@ -194,11 +213,13 @@
 ## 阶段 5: 发布准备 ⏳
 
 ### 5.1 代码审查
+
 - [ ] Obsidian 最佳实践全量检查（对照 OBSIDIAN_BEST_PRACTICES.md）
 - [ ] 安全审查（API 密钥存储、XSS 防护）
 - [ ] 依赖审查（确认无不必要的 node 原生模块）
 
 ### 5.2 兼容性测试
+
 - [ ] macOS（主要开发平台）
 - [ ] Windows（路径分隔符、opencode 二进制查找）
 - [ ] Linux
@@ -206,6 +227,7 @@
 - [ ] Obsidian 最低版本兼容性验证
 
 ### 5.3 发布
+
 - [ ] 更新 manifest.json 版本号
 - [ ] 编写 CHANGELOG
 - [ ] 完善 README（安装、配置、使用截图）
@@ -216,13 +238,13 @@
 
 ## 关键里程碑
 
-| 里程碑 | 状态 | 交付物 |
-|--------|------|--------|
-| M1: MVP 完成 | ✅ 已完成 | 基础对话、流式响应、设置页面 |
-| M2: 增强功能完成 | 🔄 进行中（82%） | 多 session 管理、tool/thinking 可视化、slash command（剩余：持久化/上下文） |
-| M3: 编辑器集成完成 | 🔄 进行中（35%） | 选中操作命令、右键菜单 |
-| M4: 优化完成 | 🔄 进行中（12%） | 性能、UX、代码质量 |
-| M5: 发布 | ⏳ 待开始 | 提交社区插件 |
+| 里程碑             | 状态             | 交付物                                                                      |
+| ------------------ | ---------------- | --------------------------------------------------------------------------- |
+| M1: MVP 完成       | ✅ 已完成        | 基础对话、流式响应、设置页面                                                |
+| M2: 增强功能完成   | 🔄 进行中（82%） | 多 session 管理、tool/thinking 可视化、slash command（剩余：持久化/上下文） |
+| M3: 编辑器集成完成 | 🔄 进行中（35%） | 选中操作命令、右键菜单                                                      |
+| M4: 优化完成       | 🔄 进行中（12%） | 性能、UX、代码质量                                                          |
+| M5: 发布           | ⏳ 待开始        | 提交社区插件                                                                |
 
 ---
 
@@ -242,22 +264,22 @@
 
 ## 已知技术债务
 
-| 问题 | 位置 | 优先级 |
-|------|------|--------|
-| `searchFiles` / `searchText` 被注释，API 类型不匹配 | `opencode-service.ts:690` / `opencode-service.ts:723` | 中 |
-| `getChatView()` 使用 `as ChatView` 类型断言 | `main.ts:145` | 低 |
-| `updateSettings()` 直接调用 `initialize()` 可能导致并发冲突 | `opencode-service.ts:755` | 中 |
-| `execSync` 在渲染进程使用 | `opencode-service.ts:118` | 低（目前可用） |
-| `MarkdownRenderer.renderMarkdown` 传入 `plugin as any` | `chat-view.tsx:99` | 低 |
+| 问题                                                        | 位置                                                  | 优先级         |
+| ----------------------------------------------------------- | ----------------------------------------------------- | -------------- |
+| `searchFiles` / `searchText` 被注释，API 类型不匹配         | `opencode-service.ts:690` / `opencode-service.ts:723` | 中             |
+| `getChatView()` 使用 `as ChatView` 类型断言                 | `main.ts:145`                                         | 低             |
+| `updateSettings()` 直接调用 `initialize()` 可能导致并发冲突 | `opencode-service.ts:755`                             | 中             |
+| `execSync` 在渲染进程使用                                   | `opencode-service.ts:118`                             | 低（目前可用） |
+| `MarkdownRenderer.renderMarkdown` 传入 `plugin as any`      | `chat-view.tsx:99`                                    | 低             |
 
 ---
 
 ## 风险和缓解
 
-| 风险 | 影响 | 概率 | 缓解措施 |
-|------|------|------|----------|
-| OpenCode SDK API 变更 | 高 | 中 | 锁定 SDK 版本（当前 v2），关注 changelog |
-| opencode 二进制不在 PATH | 高 | 中 | `findOpencodeExecutable()` 已覆盖常见安装路径 |
-| 端口 4096 冲突 | 中 | 低 | 启动前 `killPortProcess()` 已处理 |
-| Obsidian API 兼容性 | 高 | 低 | 遵循最佳实践，最低版本设为 1.4.0 |
-| 移动端 node.js API 不可用 | 高 | 高 | `execSync`/`child_process` 在移动端不可用，需要适配 |
+| 风险                      | 影响 | 概率 | 缓解措施                                            |
+| ------------------------- | ---- | ---- | --------------------------------------------------- |
+| OpenCode SDK API 变更     | 高   | 中   | 锁定 SDK 版本（当前 v2），关注 changelog            |
+| opencode 二进制不在 PATH  | 高   | 中   | `findOpencodeExecutable()` 已覆盖常见安装路径       |
+| 端口 4096 冲突            | 中   | 低   | 启动前 `killPortProcess()` 已处理                   |
+| Obsidian API 兼容性       | 高   | 低   | 遵循最佳实践，最低版本设为 1.4.0                    |
+| 移动端 node.js API 不可用 | 高   | 高   | `execSync`/`child_process` 在移动端不可用，需要适配 |

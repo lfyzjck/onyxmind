@@ -7,6 +7,7 @@
 OnyxMind 是一款基于 OpenCode AI Agent 框架的 Obsidian 智能助手插件。
 
 **核心原理**：
+
 - 插件仅作为用户交互入口
 - 所有 AI 处理和文件操作由 OpenCode Agent 在服务端完成
 - 通过 OpenCode SDK 与服务通信
@@ -14,13 +15,16 @@ OnyxMind 是一款基于 OpenCode AI Agent 框架的 Obsidian 智能助手插件
 ## 参考资源
 
 ### 代码参考
+
 当实现插件功能时遇到不确定的问题，可以参考以下项目的代码实现：
 
 **infio-copilot** (类似功能的 Obsidian 插件)
+
 - 路径: `/Users/jiachengkun/opensource/infio-copilot`
 - 用途: 参考 UI 实现、Obsidian API 使用模式、用户交互设计
 
 ### 技术文档
+
 - OpenCode SDK: https://opencode.ai/docs/sdk/
 - Obsidian API: https://docs.obsidian.md
 - 项目设计文档: 见 `PRD.md`, `ARCHITECTURE.md`, `OBSIDIAN_BEST_PRACTICES.md`
@@ -83,6 +87,7 @@ onyxmind/
 ### 当前阶段: 准备工作
 
 下一步任务:
+
 1. 安装 OpenCode SDK: `npm install @opencode-ai/sdk`
 2. 实现 OpencodeService 基础功能
 3. 创建简单的聊天界面
@@ -90,12 +95,14 @@ onyxmind/
 ### 实现优先级
 
 **P0 (MVP 必需)**:
+
 - 基础对话界面
 - OpenCode SDK 集成
 - 简单问答功能
 - 基础配置页面
 
 **P1 (重要功能)**:
+
 - 流式响应显示
 - 文件操作可视化
 - 快速命令集成
@@ -106,6 +113,7 @@ onyxmind/
 ## 代码示例参考
 
 完整的实现示例见 `IMPLEMENTATION_EXAMPLE.ts`，包含:
+
 - 插件主类实现
 - OpenCode 服务封装
 - 会话管理器
@@ -135,6 +143,7 @@ onyxmind/
 ## 问题排查
 
 如遇到问题，按以下顺序排查:
+
 1. 检查是否遵循 `OBSIDIAN_BEST_PRACTICES.md`
 2. 参考 `IMPLEMENTATION_EXAMPLE.ts` 的实现模式
 3. 查看 infio-copilot 的类似功能实现

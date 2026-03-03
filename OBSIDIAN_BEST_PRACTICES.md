@@ -7,11 +7,12 @@
 ### 1.1 插件标识和名称
 
 **manifest.json 配置**:
+
 ```json
 {
-  "id": "onyxmind",  // ✅ 不包含 "obsidian"，不以 "plugin" 结尾
-  "name": "OnyxMind",  // ✅ 不包含 "Obsidian"，不以 "Plugin" 结尾
-  "description": "AI assistant for note querying, content generation, and iterative writing.",  // ✅ 以标点结尾，不包含 "Obsidian" 或 "This plugin"
+  "id": "onyxmind", // ✅ 不包含 "obsidian"，不以 "plugin" 结尾
+  "name": "OnyxMind", // ✅ 不包含 "Obsidian"，不以 "Plugin" 结尾
+  "description": "AI assistant for note querying, content generation, and iterative writing.", // ✅ 以标点结尾，不包含 "Obsidian" 或 "This plugin"
   "version": "0.1.0",
   "minAppVersion": "0.15.0",
   "author": "Your Name",
@@ -22,6 +23,7 @@
 ### 1.2 命令命名
 
 **规则**:
+
 - 使用 sentence case（句子大小写）
 - 不包含 "command" 字样
 - 不重复插件 ID
@@ -29,16 +31,16 @@
 ```typescript
 // ✅ 正确
 this.addCommand({
-  id: 'open-chat',  // 不包含 "onyxmind-" 前缀
-  name: 'Open chat',  // sentence case，不包含 "command"
-  callback: () => this.activateView()
+  id: "open-chat", // 不包含 "onyxmind-" 前缀
+  name: "Open chat", // sentence case，不包含 "command"
+  callback: () => this.activateView(),
 });
 
 // ❌ 错误
 this.addCommand({
-  id: 'onyxmind-open-chat-command',  // 冗余
-  name: 'Open Chat Command',  // Title Case，包含 "Command"
-  callback: () => this.activateView()
+  id: "onyxmind-open-chat-command", // 冗余
+  name: "Open Chat Command", // Title Case，包含 "Command"
+  callback: () => this.activateView(),
 });
 ```
 
@@ -48,14 +50,14 @@ this.addCommand({
 
 ```typescript
 // ✅ 正确
-setting.setName('API key');
-setting.setDesc('Enter your OpenCode API key.');
-button.setText('Clear history');
+setting.setName("API key");
+setting.setDesc("Enter your OpenCode API key.");
+button.setText("Clear history");
 
 // ❌ 错误
-setting.setName('API Key');  // Title Case
-setting.setDesc('Enter Your OpenCode API Key');
-button.setText('Clear History');
+setting.setName("API Key"); // Title Case
+setting.setDesc("Enter Your OpenCode API Key");
+button.setText("Clear History");
 ```
 
 ## 2. 内存管理和生命周期
@@ -69,26 +71,26 @@ export default class OnyxMindPlugin extends Plugin {
   async onload() {
     // ✅ 使用 registerEvent 自动清理
     this.registerEvent(
-      this.app.workspace.on('file-open', (file) => {
-        console.log('File opened:', file?.path);
-      })
+      this.app.workspace.on("file-open", (file) => {
+        console.log("File opened:", file?.path);
+      }),
     );
 
     // ✅ 使用 addCommand 自动清理
     this.addCommand({
-      id: 'open-chat',
-      name: 'Open chat',
-      callback: () => this.activateView()
+      id: "open-chat",
+      name: "Open chat",
+      callback: () => this.activateView(),
     });
 
     // ✅ 使用 registerDomEvent 自动清理
-    this.registerDomEvent(document, 'click', (evt) => {
+    this.registerDomEvent(document, "click", (evt) => {
       // 处理点击
     });
 
     // ✅ 使用 registerInterval 自动清理
     this.registerInterval(
-      window.setInterval(() => this.checkConnection(), 60000)
+      window.setInterval(() => this.checkConnection(), 60000),
     );
   }
 
@@ -104,20 +106,17 @@ export default class OnyxMindPlugin extends Plugin {
 ```typescript
 // ❌ 错误 - 会导致内存泄漏
 export default class OnyxMindPlugin extends Plugin {
-  chatView: ChatView;  // 不要存储视图引用
+  chatView: ChatView; // 不要存储视图引用
 
   async onload() {
-    this.chatView = new ChatView(this);  // 错误
+    this.chatView = new ChatView(this); // 错误
   }
 }
 
 // ✅ 正确 - 按需获取视图
 export default class OnyxMindPlugin extends Plugin {
   async onload() {
-    this.registerView(
-      VIEW_TYPE_CHAT,
-      (leaf) => new ChatView(leaf, this)
-    );
+    this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));
   }
 
   getChatView(): ChatView | null {
@@ -137,16 +136,16 @@ export default class OnyxMindPlugin extends Plugin {
 MarkdownRenderer.renderMarkdown(
   content,
   containerEl,
-  '',
-  this  // 不要传递插件实例
+  "",
+  this, // 不要传递插件实例
 );
 
 // ✅ 正确
 MarkdownRenderer.renderMarkdown(
   content,
   containerEl,
-  '',
-  null  // 或者传递一个专门的 component 对象
+  "",
+  null, // 或者传递一个专门的 component 对象
 );
 ```
 
@@ -163,7 +162,7 @@ if (file instanceof TFile) {
 
 // ❌ 错误
 const file = this.app.vault.getAbstractFileByPath(path) as TFile;
-const content = await this.app.vault.read(file);  // 可能崩溃
+const content = await this.app.vault.read(file); // 可能崩溃
 ```
 
 ### 3.2 避免使用 any
@@ -190,11 +189,11 @@ async handleResponse(response: any) {
 
 ```typescript
 // ✅ 正确
-const API_ENDPOINT = 'https://api.opencode.ai';
+const API_ENDPOINT = "https://api.opencode.ai";
 let sessionId: string | null = null;
 
 // ❌ 错误
-var API_ENDPOINT = 'https://api.opencode.ai';
+var API_ENDPOINT = "https://api.opencode.ai";
 var sessionId;
 ```
 
@@ -214,7 +213,10 @@ class OnyxMindPlugin extends Plugin {
   }
 
   // ✅ 正确 - 使用 Vault.process() 后台修改文件
-  async updateFileInBackground(file: TFile, updater: (content: string) => string) {
+  async updateFileInBackground(
+    file: TFile,
+    updater: (content: string) => string,
+  ) {
     await this.app.vault.process(file, updater);
   }
 
@@ -223,7 +225,7 @@ class OnyxMindPlugin extends Plugin {
     const file = this.app.workspace.getActiveFile();
     if (file) {
       const content = await this.app.vault.read(file);
-      await this.app.vault.modify(file, content + text);  // 会丢失光标位置
+      await this.app.vault.modify(file, content + text); // 会丢失光标位置
     }
   }
 }
@@ -233,7 +235,7 @@ class OnyxMindPlugin extends Plugin {
 
 ```typescript
 // ✅ 正确 - 使用 normalizePath
-import { normalizePath } from 'obsidian';
+import { normalizePath } from "obsidian";
 
 const userPath = settings.notesFolder;
 const normalizedPath = normalizePath(userPath);
@@ -243,18 +245,18 @@ const file = this.app.vault.getAbstractFileByPath(normalizedPath);
 const configPath = `${this.app.vault.configDir}/onyxmind-data.json`;
 
 // ❌ 错误 - 硬编码 .obsidian
-const configPath = '.obsidian/onyxmind-data.json';
+const configPath = ".obsidian/onyxmind-data.json";
 ```
 
 ### 4.3 文件查找优化
 
 ```typescript
 // ✅ 正确 - 直接查找
-const file = this.app.vault.getAbstractFileByPath('path/to/file.md');
+const file = this.app.vault.getAbstractFileByPath("path/to/file.md");
 
 // ❌ 错误 - 遍历整个 vault
 const files = this.app.vault.getMarkdownFiles();
-const file = files.find(f => f.path === 'path/to/file.md');
+const file = files.find((f) => f.path === "path/to/file.md");
 ```
 
 ## 5. UI/UX 最佳实践
@@ -268,23 +270,23 @@ class OnyxMindSettingTab extends PluginSettingTab {
     containerEl.empty();
 
     // ✅ 正确 - 使用 setHeading()
-    new Setting(containerEl)
-      .setHeading()
-      .setName('Connection');  // sentence case，不包含 "settings"
+    new Setting(containerEl).setHeading().setName("Connection"); // sentence case，不包含 "settings"
 
     new Setting(containerEl)
-      .setName('API key')  // sentence case
-      .setDesc('Enter your OpenCode API key.')
-      .addText(text => text
-        .setPlaceholder('sk-...')
-        .setValue(this.plugin.settings.apiKey)
-        .onChange(async (value) => {
-          this.plugin.settings.apiKey = value;
-          await this.plugin.saveSettings();
-        }));
+      .setName("API key") // sentence case
+      .setDesc("Enter your OpenCode API key.")
+      .addText((text) =>
+        text
+          .setPlaceholder("sk-...")
+          .setValue(this.plugin.settings.apiKey)
+          .onChange(async (value) => {
+            this.plugin.settings.apiKey = value;
+            await this.plugin.saveSettings();
+          }),
+      );
 
     // ❌ 错误 - 手动创建标题
-    containerEl.createEl('h2', { text: 'Connection Settings' });
+    containerEl.createEl("h2", { text: "Connection Settings" });
   }
 }
 ```
@@ -294,17 +296,17 @@ class OnyxMindSettingTab extends PluginSettingTab {
 ```typescript
 // ✅ 正确 - 不设置 hotkeys
 this.addCommand({
-  id: 'open-chat',
-  name: 'Open chat',
-  callback: () => this.activateView()
+  id: "open-chat",
+  name: "Open chat",
+  callback: () => this.activateView(),
 });
 
 // ❌ 错误 - 设置默认快捷键可能冲突
 this.addCommand({
-  id: 'open-chat',
-  name: 'Open chat',
-  hotkeys: [{ modifiers: ['Mod'], key: 'o' }],  // 不要这样做
-  callback: () => this.activateView()
+  id: "open-chat",
+  name: "Open chat",
+  hotkeys: [{ modifiers: ["Mod"], key: "o" }], // 不要这样做
+  callback: () => this.activateView(),
 });
 ```
 
@@ -370,14 +372,14 @@ this.addCommand({
 
 ```typescript
 // ✅ 正确 - 使用 CSS 类
-const button = containerEl.createEl('button', {
-  cls: 'onyxmind-button'
+const button = containerEl.createEl("button", {
+  cls: "onyxmind-button",
 });
 
 // ❌ 错误 - 内联样式
-const button = containerEl.createEl('button');
-button.style.backgroundColor = '#007bff';
-button.style.color = 'white';
+const button = containerEl.createEl("button");
+button.style.backgroundColor = "#007bff";
+button.style.color = "white";
 ```
 
 ## 7. 无障碍访问（必需）
@@ -386,17 +388,17 @@ button.style.color = 'white';
 
 ```typescript
 // ✅ 正确 - 支持键盘操作
-const button = containerEl.createEl('button', {
-  cls: 'onyxmind-icon-button',
+const button = containerEl.createEl("button", {
+  cls: "onyxmind-icon-button",
   attr: {
-    'aria-label': 'Clear chat history',
-    'data-tooltip-position': 'top'
-  }
+    "aria-label": "Clear chat history",
+    "data-tooltip-position": "top",
+  },
 });
 
-button.addEventListener('click', () => this.clearHistory());
-button.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
+button.addEventListener("click", () => this.clearHistory());
+button.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
     this.clearHistory();
   }
@@ -435,18 +437,18 @@ button.addEventListener('keydown', (e) => {
 
 ```typescript
 // ✅ 正确 - 为图标按钮添加 ARIA 标签
-const closeButton = headerEl.createEl('button', {
-  cls: 'onyxmind-close-button',
+const closeButton = headerEl.createEl("button", {
+  cls: "onyxmind-close-button",
   attr: {
-    'aria-label': 'Close chat',
-    'data-tooltip-position': 'bottom'
-  }
+    "aria-label": "Close chat",
+    "data-tooltip-position": "bottom",
+  },
 });
-closeButton.innerHTML = '×';
+closeButton.innerHTML = "×";
 
 // ❌ 错误 - 没有 ARIA 标签的图标按钮
-const closeButton = headerEl.createEl('button');
-closeButton.innerHTML = '×';
+const closeButton = headerEl.createEl("button");
+closeButton.innerHTML = "×";
 ```
 
 ## 8. 平台兼容性
@@ -454,7 +456,7 @@ closeButton.innerHTML = '×';
 ### 8.1 使用 Platform API
 
 ```typescript
-import { Platform } from 'obsidian';
+import { Platform } from "obsidian";
 
 // ✅ 正确
 if (Platform.isMobile) {
@@ -466,7 +468,7 @@ if (Platform.isIosApp) {
 }
 
 // ❌ 错误
-if (navigator.userAgent.includes('Mobile')) {
+if (navigator.userAgent.includes("Mobile")) {
   // 不可靠
 }
 ```
@@ -522,13 +524,13 @@ async fetchData(url: string) {
 
 ```typescript
 // ✅ 正确
-const container = containerEl.createDiv({ cls: 'onyxmind-container' });
-const title = container.createEl('h3', { text: 'Chat History' });
-const button = container.createEl('button', { text: 'Clear' });
+const container = containerEl.createDiv({ cls: "onyxmind-container" });
+const title = container.createEl("h3", { text: "Chat History" });
+const button = container.createEl("button", { text: "Clear" });
 
 // ❌ 错误
-const container = document.createElement('div');
-container.className = 'onyxmind-container';
+const container = document.createElement("div");
+container.className = "onyxmind-container";
 containerEl.appendChild(container);
 ```
 
@@ -563,7 +565,7 @@ loadData() {
 // ✅ 正确 - 使用 setText 或 Markdown 渲染
 messageEl.setText(userInput);
 // 或
-MarkdownRenderer.renderMarkdown(userInput, messageEl, '', null);
+MarkdownRenderer.renderMarkdown(userInput, messageEl, "", null);
 
 // ❌ 错误 - innerHTML 有 XSS 风险
 messageEl.innerHTML = userInput;
@@ -650,26 +652,28 @@ npm install --save-dev eslint-plugin-obsidianmd
 
 ```javascript
 // eslint.config.mjs
-import obsidianPlugin from 'eslint-plugin-obsidianmd';
+import obsidianPlugin from "eslint-plugin-obsidianmd";
 
 export default [
   {
     plugins: {
-      obsidianmd: obsidianPlugin
+      obsidianmd: obsidianPlugin,
     },
     rules: {
-      ...obsidianPlugin.configs.recommended.rules
-    }
-  }
+      ...obsidianPlugin.configs.recommended.rules,
+    },
+  },
 ];
 ```
 
 运行检查:
+
 ```bash
 npm run lint
 ```
 
 自动修复:
+
 ```bash
 npm run lint -- --fix
 ```

@@ -6,15 +6,15 @@
  * common binary locations so the OpenCode SDK can spawn the server process.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 
-const isWindows = process.platform === 'win32';
-const PATH_SEPARATOR = isWindows ? ';' : ':';
-const OPENCODE_EXECUTABLE = isWindows ? 'opencode.exe' : 'opencode';
+const isWindows = process.platform === "win32";
+const PATH_SEPARATOR = isWindows ? ";" : ":";
+const OPENCODE_EXECUTABLE = isWindows ? "opencode.exe" : "opencode";
 
 function getHomeDir(): string {
-  return process.env.HOME || process.env.USERPROFILE || '';
+  return process.env.HOME || process.env.USERPROFILE || "";
 }
 
 /** Returns common binary directories where `opencode` might be installed. */
@@ -25,47 +25,47 @@ function getExtraBinaryPaths(): string[] {
     const paths: string[] = [];
     const localAppData = process.env.LOCALAPPDATA;
     const appData = process.env.APPDATA;
-    const programFiles = process.env.ProgramFiles || 'C:\\Program Files';
+    const programFiles = process.env.ProgramFiles || "C:\\Program Files";
 
-    if (appData) paths.push(path.join(appData, 'npm'));
+    if (appData) paths.push(path.join(appData, "npm"));
     if (localAppData) {
-      paths.push(path.join(localAppData, 'Programs', 'nodejs'));
+      paths.push(path.join(localAppData, "Programs", "nodejs"));
     }
-    paths.push(path.join(programFiles, 'nodejs'));
+    paths.push(path.join(programFiles, "nodejs"));
 
     const voltaHome = process.env.VOLTA_HOME;
-    if (voltaHome) paths.push(path.join(voltaHome, 'bin'));
-    else if (home) paths.push(path.join(home, '.volta', 'bin'));
+    if (voltaHome) paths.push(path.join(voltaHome, "bin"));
+    else if (home) paths.push(path.join(home, ".volta", "bin"));
 
-    if (home) paths.push(path.join(home, '.local', 'bin'));
+    if (home) paths.push(path.join(home, ".local", "bin"));
     return paths;
   }
 
   // Unix / macOS
   const paths = [
-    '/usr/local/bin',
-    '/opt/homebrew/bin',  // macOS ARM Homebrew
-    '/usr/bin',
-    '/bin',
+    "/usr/local/bin",
+    "/opt/homebrew/bin", // macOS ARM Homebrew
+    "/usr/bin",
+    "/bin",
   ];
 
   const voltaHome = process.env.VOLTA_HOME;
-  if (voltaHome) paths.push(path.join(voltaHome, 'bin'));
+  if (voltaHome) paths.push(path.join(voltaHome, "bin"));
 
   const asdfRoot = process.env.ASDF_DATA_DIR || process.env.ASDF_DIR;
   if (asdfRoot) {
-    paths.push(path.join(asdfRoot, 'shims'));
-    paths.push(path.join(asdfRoot, 'bin'));
+    paths.push(path.join(asdfRoot, "shims"));
+    paths.push(path.join(asdfRoot, "bin"));
   }
 
   const fnmMultishell = process.env.FNM_MULTISHELL_PATH;
   if (fnmMultishell) paths.push(fnmMultishell);
 
   if (home) {
-    paths.push(path.join(home, '.local', 'bin'));
-    paths.push(path.join(home, '.volta', 'bin'));
-    paths.push(path.join(home, '.asdf', 'shims'));
-    paths.push(path.join(home, 'go', 'bin'));  // Go binaries (opencode is Go-based)
+    paths.push(path.join(home, ".local", "bin"));
+    paths.push(path.join(home, ".volta", "bin"));
+    paths.push(path.join(home, ".asdf", "shims"));
+    paths.push(path.join(home, "go", "bin")); // Go binaries (opencode is Go-based)
   }
 
   return paths;
@@ -75,7 +75,7 @@ function getExtraBinaryPaths(): string[] {
 export function findOpencodeExecutable(): string | null {
   const searchPaths = [
     ...getExtraBinaryPaths(),
-    ...(process.env.PATH || '').split(PATH_SEPARATOR),
+    ...(process.env.PATH || "").split(PATH_SEPARATOR),
   ];
 
   for (const dir of searchPaths) {
@@ -99,7 +99,7 @@ export function findOpencodeExecutable(): string | null {
  */
 export function getEnhancedPath(): string {
   const extraPaths = getExtraBinaryPaths().filter(Boolean);
-  const currentPath = process.env.PATH || '';
+  const currentPath = process.env.PATH || "";
   const currentDirs = currentPath.split(PATH_SEPARATOR).filter(Boolean);
 
   const seen = new Set<string>();

@@ -8,19 +8,19 @@
  */
 
 export interface AgentPromptSettings {
-	vaultPath?: string;
-	customPrompt?: string;
+  vaultPath?: string;
+  customPrompt?: string;
 }
 
 function getTodayDate(): string {
-	const iso = new Date().toISOString();
-	return iso.substring(0, 10);
+  const iso = new Date().toISOString();
+  return iso.substring(0, 10);
 }
 
 function getBasePrompt(vaultPath: string | undefined): string {
-	const vaultInfo = vaultPath ? `\n\nVault absolute path: ${vaultPath}` : '';
+  const vaultInfo = vaultPath ? `\n\nVault absolute path: ${vaultPath}` : "";
 
-	return `## Time Context
+  return `## Time Context
 
 - **Current Date**: ${getTodayDate()}
 - **Knowledge Status**: You possess extensive internal knowledge up to your training cutoff. Your internal weights are static and "past," while the Current Date is "present."
@@ -46,7 +46,7 @@ The current working directory is the user's vault root.${vaultInfo}
 
 **Vault files** (default):
 - ✓ Correct: \`notes/my-note.md\`, \`my-note.md\`, \`folder/subfolder/file.md\`, \`.\`
-- ✗ WRONG: \`/notes/my-note.md\`, \`${vaultPath ?? '/absolute/path'}/file.md\`
+- ✗ WRONG: \`/notes/my-note.md\`, \`${vaultPath ?? "/absolute/path"}/file.md\`
 - A leading slash or absolute path will FAIL for vault operations.
 
 ## Obsidian Context
@@ -113,11 +113,11 @@ When working with the vault:
 }
 
 export function buildAgentPrompt(settings: AgentPromptSettings = {}): string {
-	let prompt = getBasePrompt(settings.vaultPath);
+  let prompt = getBasePrompt(settings.vaultPath);
 
-	if (settings.customPrompt?.trim()) {
-		prompt += '\n\n## Custom Instructions\n\n' + settings.customPrompt.trim();
-	}
+  if (settings.customPrompt?.trim()) {
+    prompt += "\n\n## Custom Instructions\n\n" + settings.customPrompt.trim();
+  }
 
-	return prompt;
+  return prompt;
 }
