@@ -55,10 +55,13 @@ interface UseChatControllerResult {
 	sendMessage: (text: string) => Promise<void>;
 }
 
+const ABORT_ERROR_NAME = 'MessageAbortedError';
+
 export function useChatController(plugin: OnyxMindPlugin): UseChatControllerResult {
 	const messagesRef = useRef<HTMLDivElement | null>(null);
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const streamAbortRef = useRef<AbortController | null>(null);
+	const isAbortingRef = useRef(false);
 
 	const [sessions, setSessions] = useState<Session[]>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -189,13 +192,24 @@ export function useChatController(plugin: OnyxMindPlugin): UseChatControllerResu
 	}, [appendError, plugin]);
 
 	const handleAbort = useCallback(async () => {
-		setIsStreaming(false);
-		streamAbortRef.current?.abort();
-		streamAbortRef.current = null;
+		if (isAbortingRef.current) {
+			return;
+		}
+		isAbortingRef.current = true;
+		try {
+			setIsStreaming(false);
+			streamAbortRef.current?.abort();
+			streamAbortRef.current = null;
 
-		const sessionId = plugin.sessionManager.getActiveSessionId();
-		if (sessionId) {
-			await plugin.chatService.abortSession(sessionId);
+			const sessionId = plugin.sessionManager.getActiveSessionId();
+			if (sessionId) {
+				const success = await plugin.chatService.abortSession(sessionId);
+				if (!success) {
+					console.warn('[OnyxMind] Server abort failed for session:', sessionId);
+				}
+			}
+		} finally {
+			isAbortingRef.current = false;
 		}
 	}, [plugin]);
 
@@ -272,7 +286,9 @@ export function useChatController(plugin: OnyxMindPlugin): UseChatControllerResu
 						});
 					},
 					onError: (error) => {
-						const isAbortError = controller.signal.aborted || error.includes('MessageAbortedError');
+						const isAbortError = controller.signal.aborted
+							|| error === ABORT_ERROR_NAME
+							|| error.startsWith(`[${ABORT_ERROR_NAME}]`);
 						if (!isAbortError) {
 							appendError(error);
 						}
@@ -471,10 +487,17 @@ export function useChatController(plugin: OnyxMindPlugin): UseChatControllerResu
 
 		return () => {
 			isDisposed = true;
-			streamAbortRef.current?.abort();
+			const controller = streamAbortRef.current;
 			streamAbortRef.current = null;
+			if (controller) {
+				controller.abort();
+				const sessionId = plugin.sessionManager.getActiveSessionId();
+				if (sessionId) {
+					void plugin.chatService.abortSession(sessionId);
+				}
+			}
 		};
-	}, [refreshCommands, refreshSessionState]);
+	}, [plugin, refreshCommands, refreshSessionState]);
 
 	useEffect(() => {
 		if (!slashMenuOpen) {

@@ -132,7 +132,7 @@ export class ChatService {
 	/**
 	 * Abort a running session request
 	 */
-	async abortSession(sessionId: string): Promise<void> {
-		await this.opencodeService.abortSession(sessionId);
+	async abortSession(sessionId: string): Promise<boolean> {
+		return this.opencodeService.abortSession(sessionId);
 	}
 }
