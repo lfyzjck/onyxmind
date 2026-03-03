@@ -2,6 +2,7 @@ import type OnyxMindPlugin from '../../../main';
 import type { Message } from '../../../services/opencode-service';
 import { MarkdownBlock } from './markdown-block';
 import { ToolUseList } from './tool-use-list';
+import { CSS_CLASS_MESSAGE_HAS_THINKING, CSS_CLASS_PART_TEXT } from '../constants';
 
 interface MessageBubbleProps {
 	plugin: OnyxMindPlugin;
@@ -18,7 +19,7 @@ export function MessageBubble(props: MessageBubbleProps) {
 	const containerClassName = [
 		'onyxmind-message',
 		`onyxmind-message-${message.role}`,
-		hasThinkingLabel ? 'onyxmind-message-has-thinking' : '',
+		hasThinkingLabel ? CSS_CLASS_MESSAGE_HAS_THINKING : '',
 	].filter(Boolean).join(' ');
 
 	return (
@@ -28,7 +29,7 @@ export function MessageBubble(props: MessageBubbleProps) {
 				<MarkdownBlock
 					plugin={plugin}
 					content={message.content}
-					className="onyxmind-part-text"
+					className={CSS_CLASS_PART_TEXT}
 				/>
 			</div>
 		</div>

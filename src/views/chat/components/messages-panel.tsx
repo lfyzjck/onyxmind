@@ -3,6 +3,7 @@ import { StreamingBubble } from './streaming-bubble';
 import type OnyxMindPlugin from '../../../main';
 import type { Message, StreamChunkToolUse } from '../../../services/opencode-service';
 import type { RefObject } from 'react';
+import { LABEL_ERROR, LABEL_RUNNING } from '../constants';
 
 interface MessagesPanelProps {
 	plugin: OnyxMindPlugin;
@@ -58,13 +59,13 @@ export function MessagesPanel(props: MessagesPanelProps) {
 				className="onyxmind-thinking"
 				style={{ display: isStreaming ? 'flex' : 'none' }}
 			>
-				<span>Running...</span>
+				<span>{LABEL_RUNNING}</span>
 			</div>
 
 			{errors.map((error, idx) => (
 				<div className="onyxmind-error" key={`${idx}-${error}`}>
 					<div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
-						<span>Error</span>
+						<span>{LABEL_ERROR}</span>
 					</div>
 					<div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
 						{error}

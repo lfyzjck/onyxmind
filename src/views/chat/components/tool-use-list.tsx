@@ -1,4 +1,5 @@
 import type { StreamChunkToolUse } from '../../../services/opencode-service';
+import { LABEL_OUTPUT } from '../constants';
 
 const TOOL_ICONS: Record<string, string> = {
 	bash: '$',
@@ -58,7 +59,7 @@ export function ToolUseList(props: ToolUseListProps) {
 					</div>
 					{(tool.output !== undefined || tool.error) && (
 						<details className="onyxmind-tool-output" open={tool.status === 'error'}>
-							<summary>Output</summary>
+							<summary>{LABEL_OUTPUT}</summary>
 							<div className="onyxmind-tool-output-content">
 								{tool.error ? (
 									<div className="onyxmind-tool-output-error">{tool.error}</div>

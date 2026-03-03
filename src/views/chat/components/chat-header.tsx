@@ -1,3 +1,5 @@
+import { ARIA_LABEL_REFRESH_SESSIONS, BRAND_NAME } from '../constants';
+
 interface ChatHeaderProps {
 	scopeLabel: string;
 	onRefresh: () => void;
@@ -17,7 +19,7 @@ export function ChatHeader(props: ChatHeaderProps) {
 				<div className="onyxmind-toolbar-group">
 					<button
 						className="onyxmind-toolbar-button"
-						aria-label="Refresh sessions"
+						aria-label={ARIA_LABEL_REFRESH_SESSIONS}
 						data-tooltip-position="bottom"
 						onClick={onRefresh}
 					>
@@ -30,7 +32,7 @@ export function ChatHeader(props: ChatHeaderProps) {
 			<div className="onyxmind-brand-row">
 				<span className="onyxmind-brand-icon">✶</span>
 				<div className="onyxmind-brand-meta">
-					<div className="onyxmind-brand-title">OnyxMind</div>
+					<div className="onyxmind-brand-title">{BRAND_NAME}</div>
 					<div className="onyxmind-header-scope">{scopeLabel}</div>
 				</div>
 			</div>

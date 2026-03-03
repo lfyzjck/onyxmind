@@ -1,5 +1,17 @@
 import type { KeyboardEvent, RefObject } from 'react';
 import type { AvailableCommand } from '../../../services/opencode-service';
+import {
+	ARIA_LABEL_SEND,
+	ARIA_LABEL_SLASH_MENU,
+	ARIA_LABEL_STOP,
+	CLASS_IS_SELECTED,
+	LABEL_LOCAL_SAFE,
+	LABEL_NO_COMMANDS,
+	LABEL_SEND,
+	LABEL_SLASH_HINT,
+	LABEL_STOP,
+	PLACEHOLDER_CHAT_INPUT,
+} from '../constants';
 
 interface ChatComposerProps {
 	inputRef: RefObject<HTMLTextAreaElement | null>;
@@ -51,7 +63,7 @@ export function ChatComposer(props: ChatComposerProps) {
 			<textarea
 				ref={inputRef}
 				className="onyxmind-input"
-				placeholder="How can I help you today?"
+				placeholder={PLACEHOLDER_CHAT_INPUT}
 				rows={4}
 				value={inputText}
 				disabled={isStreaming}
@@ -77,9 +89,9 @@ export function ChatComposer(props: ChatComposerProps) {
 			/>
 
 			{slashMenuOpen && (
-				<div className="onyxmind-slash-menu" role="listbox" aria-label="Slash commands">
+				<div className="onyxmind-slash-menu" role="listbox" aria-label={ARIA_LABEL_SLASH_MENU}>
 					{filteredCommands.length === 0 && (
-						<div className="onyxmind-slash-empty">No commands</div>
+						<div className="onyxmind-slash-empty">{LABEL_NO_COMMANDS}</div>
 					)}
 					{filteredCommands.map((command, index) => (
 						<button
@@ -87,7 +99,7 @@ export function ChatComposer(props: ChatComposerProps) {
 							type="button"
 							role="option"
 							aria-selected={index === slashSelectedIndex}
-							className={`onyxmind-slash-item ${index === slashSelectedIndex ? 'is-selected' : ''}`}
+							className={`onyxmind-slash-item ${index === slashSelectedIndex ? CLASS_IS_SELECTED : ''}`}
 							onMouseEnter={() => onSetSlashSelectedIndex(index)}
 							onMouseDown={(event) => {
 								event.preventDefault();
@@ -106,27 +118,27 @@ export function ChatComposer(props: ChatComposerProps) {
 			<div className="onyxmind-input-footer">
 				<span className="onyxmind-footer-item">{providerId}</span>
 				<span className="onyxmind-footer-item">{modelId}</span>
-				<span className="onyxmind-footer-item">Slash: /</span>
-				<span className="onyxmind-footer-item">Local safe</span>
+				<span className="onyxmind-footer-item">{LABEL_SLASH_HINT}</span>
+				<span className="onyxmind-footer-item">{LABEL_LOCAL_SAFE}</span>
 			</div>
 
 			<div className="onyxmind-button-row">
 				<button
 					className="onyxmind-abort-button"
 					style={{ display: isStreaming ? '' : 'none' }}
-					aria-label="Stop generating"
+					aria-label={ARIA_LABEL_STOP}
 					onClick={onAbort}
 				>
-					Stop
+					{LABEL_STOP}
 				</button>
 				<button
 					className="onyxmind-send-button"
 					style={{ display: isStreaming ? 'none' : '' }}
-					aria-label="Send message"
+					aria-label={ARIA_LABEL_SEND}
 					disabled={isStreaming}
 					onClick={onSubmit}
 				>
-					Send
+					{LABEL_SEND}
 				</button>
 			</div>
 		</div>

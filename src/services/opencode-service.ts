@@ -21,6 +21,21 @@ import type {
 	OpencodeClient,
 } from '@opencode-ai/sdk/v2';
 
+// Network / server config
+const SERVER_HOSTNAME = '127.0.0.1';
+const OBSIDIAN_CORS_ORIGIN = 'app://obsidian.md';
+
+// Default values
+const DEFAULT_SESSION_TITLE = 'OnyxMind Session';
+
+// Error messages
+const ERROR_CLIENT_NOT_INITIALIZED = 'OpenCode client not initialized';
+
+// SDK message part types
+const PART_TYPE_TEXT = 'text';
+const PART_TYPE_REASONING = 'reasoning';
+const PART_TYPE_TOOL = 'tool';
+
 export interface Message {
 	role: 'user' | 'assistant';
 	content: string;
@@ -166,13 +181,13 @@ export class OpencodeService {
 
 			// 1. 启动 server（使用 patch 版本，cors 同时通过 --cors 参数传入）
 			const serverResult = await createOpencodeServerPatched({
-				hostname: "127.0.0.1",
+				hostname: SERVER_HOSTNAME,
 				port: this.port,
 				signal: this.abortController.signal,
 				config: {
 					model: this.settings.modelId,
 					server: {
-						cors: ["app://obsidian.md"],
+						cors: [OBSIDIAN_CORS_ORIGIN],
 					},
 					provider: {
 						[this.settings.providerId]: {
@@ -404,7 +419,7 @@ export class OpencodeService {
 		}
 
 		const text = parts
-			.filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+			.filter((part: any) => part?.type === PART_TYPE_TEXT && typeof part.text === 'string')
 			.map((part: any) => part.text)
 			.join('');
 
@@ -422,7 +437,7 @@ export class OpencodeService {
 		}
 
 		return parts
-			.filter((part: any) => part?.type === 'reasoning' && typeof part.text === 'string')
+			.filter((part: any) => part?.type === PART_TYPE_REASONING && typeof part.text === 'string')
 			.map((part: any) => part.text)
 			.join('');
 	}
@@ -439,7 +454,7 @@ export class OpencodeService {
 			}
 
 			const raw = part as any;
-			if (raw.type !== 'tool' || typeof raw.tool !== 'string' || typeof raw.id !== 'string') {
+			if (raw.type !== PART_TYPE_TOOL || typeof raw.tool !== 'string' || typeof raw.id !== 'string') {
 				continue;
 			}
 
@@ -516,9 +531,8 @@ export class OpencodeService {
 	 */
 	async createSession(title?: string): Promise<string | null> {
 		if (!this.client) {
-			const error = 'OpenCode client not initialized';
-			console.error('[OnyxMind]', error);
-			new Notice(error);
+			console.error('[OnyxMind]', ERROR_CLIENT_NOT_INITIALIZED);
+			new Notice(ERROR_CLIENT_NOT_INITIALIZED);
 			return null;
 		}
 
@@ -530,7 +544,7 @@ export class OpencodeService {
 			console.log('[OnyxMind] Using vault path:', vaultPath);
 
 			const response = await this.client.session.create({
-				title: title || 'OnyxMind Session',
+				title: title || DEFAULT_SESSION_TITLE,
 				directory: vaultPath,
 			});
 
@@ -578,9 +592,8 @@ export class OpencodeService {
 		prompt: string
 	): Promise<AsyncIterableIterator<StreamChunk> | null> {
 		if (!this.client) {
-			const error = 'OpenCode client not initialized';
-			console.error('[OnyxMind]', error);
-			new Notice(error);
+			console.error('[OnyxMind]', ERROR_CLIENT_NOT_INITIALIZED);
+			new Notice(ERROR_CLIENT_NOT_INITIALIZED);
 			return null;
 		}
 
@@ -591,7 +604,7 @@ export class OpencodeService {
 			// Send async prompt (non-blocking)
 			await this.client.session.promptAsync({
 				sessionID: sessionId,
-				parts: [{ type: 'text', text: prompt }],
+				parts: [{ type: PART_TYPE_TEXT, text: prompt }],
 				model: {
 					providerID: this.settings.providerId,
 					modelID: this.settings.modelId,
@@ -667,13 +680,13 @@ export class OpencodeService {
 						// delta carries the incremental text; use full text as fallback
 						const delta = event.properties.delta;
 
-						if (part.type === 'text') {
-							const text = delta ?? part.text;
-							if (text) yield { type: 'content', text };
-						} else if (part.type === 'reasoning') {
-							const text = delta ?? part.text;
-							if (text) yield { type: 'thinking', text };
-						} else if (part.type === 'tool') {
+					if (part.type === PART_TYPE_TEXT) {
+						const text = delta ?? part.text;
+						if (text) yield { type: 'content', text };
+					} else if (part.type === PART_TYPE_REASONING) {
+						const text = delta ?? part.text;
+						if (text) yield { type: 'thinking', text };
+					} else if (part.type === PART_TYPE_TOOL) {
 							const state = part.state;
 							if (!state) break;
 							const chunk: StreamChunkToolUse = {
@@ -864,7 +877,7 @@ export class OpencodeService {
 
 			const response = await this.client.session.promptAsync({
 				sessionID: sessionId,
-				parts: [{ type: 'text', text: prompt }],
+				parts: [{ type: PART_TYPE_TEXT, text: prompt }],
 				model: {
 					providerID: this.settings.providerId,
 					modelID: this.settings.modelId,
