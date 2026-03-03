@@ -1,34 +1,51 @@
+import { setIcon } from 'obsidian';
+import { useEffect, useRef } from 'react';
 import type { StreamChunkToolUse } from '../../../services/opencode-service';
 import { LABEL_OUTPUT } from '../constants';
 
+// Lucide icon names (as used by Obsidian's setIcon API)
 const TOOL_ICONS: Record<string, string> = {
-	bash: '$',
-	read: '>',
-	write: '<',
-	edit: '<',
-	glob: '*',
-	grep: '*',
-	task: '#',
-	question: '?',
-	webfetch: '%',
-	websearch: '@',
+	bash:      'terminal',
+	read:      'file-text',
+	write:     'file-plus',
+	edit:      'file-pen-line',
+	glob:      'folder-search',
+	grep:      'text-search',
+	task:      'bot',
+	question:  'help-circle',
+	webfetch:  'globe',
+	websearch: 'search',
 };
 
-function toolIcon(name: string): string {
-	return TOOL_ICONS[name] ?? 'o';
+const STATUS_ICONS: Record<string, string> = {
+	running:   'loader',
+	completed: 'check',
+	error:     'alert-circle',
+};
+
+function toolIconName(name: string): string {
+	return TOOL_ICONS[name.toLowerCase()] ?? 'wrench';
 }
 
-function toolStatusIcon(status: StreamChunkToolUse['status']): string {
-	switch (status) {
-		case 'running':
-			return '...';
-		case 'completed':
-			return '✓';
-		case 'error':
-			return '!';
-		default:
-			return '·';
-	}
+function statusIconName(status: StreamChunkToolUse['status']): string {
+	return STATUS_ICONS[status] ?? 'minus';
+}
+
+interface ObsidianIconProps {
+	icon: string;
+	className?: string;
+}
+
+function ObsidianIcon({ icon, className }: ObsidianIconProps) {
+	const ref = useRef<HTMLSpanElement>(null);
+
+	useEffect(() => {
+		if (ref.current) {
+			setIcon(ref.current, icon);
+		}
+	}, [icon]);
+
+	return <span ref={ref} className={className} aria-hidden="true" />;
 }
 
 interface ToolUseListProps {
@@ -52,10 +69,16 @@ export function ToolUseList(props: ToolUseListProps) {
 					data-status={tool.status}
 				>
 					<div className="onyxmind-tool-header">
-						<span className="onyxmind-tool-icon">{toolIcon(tool.tool)}</span>
+						<ObsidianIcon
+							icon={toolIconName(tool.tool)}
+							className="onyxmind-tool-icon"
+						/>
 						<span className="onyxmind-tool-name">{tool.tool}</span>
 						<span className="onyxmind-tool-title">{tool.title ?? ''}</span>
-						<span className="onyxmind-tool-status-icon">{toolStatusIcon(tool.status)}</span>
+						<ObsidianIcon
+							icon={statusIconName(tool.status)}
+							className="onyxmind-tool-status-icon"
+						/>
 					</div>
 					{(tool.output !== undefined || tool.error) && (
 						<details className="onyxmind-tool-output" open={tool.status === 'error'}>

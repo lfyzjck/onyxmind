@@ -114,6 +114,7 @@
 	flex-direction: column;
 	gap: 10px;
 	background: var(--onyxmind-bg-shell);
+	user-select: text;
 }
 
 .onyxmind-welcome {
@@ -279,9 +280,15 @@
 }
 
 .onyxmind-tool-icon {
-	font-size: 12px;
-	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	color: var(--onyxmind-accent);
+}
+
+.onyxmind-tool-icon svg {
+	width: 14px;
+	height: 14px;
 }
 
 .onyxmind-tool-name {
@@ -299,9 +306,15 @@
 }
 
 .onyxmind-tool-status-icon {
-	text-align: right;
-	font-size: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
 	color: var(--onyxmind-faint);
+}
+
+.onyxmind-tool-status-icon svg {
+	width: 13px;
+	height: 13px;
 }
 
 .onyxmind-part-tool[data-status="running"] .onyxmind-tool-status-icon {
