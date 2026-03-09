@@ -57,14 +57,14 @@ export class OnyxMindSettingTab extends PluginSettingTab {
     containerEl.empty();
 
     // Connection settings
-    new Setting(containerEl).setHeading().setName("Connection");
+    new Setting(containerEl).setHeading().setName("Provider");
 
     new Setting(containerEl)
-      .setName("OpenCode service URL")
-      .setDesc("Base URL for the OpenCode service.")
+      .setName("Service URL")
+      .setDesc("Base URL for the service.")
       .addText((text) =>
         text
-          .setPlaceholder("http://localhost:8080")
+          .setPlaceholder("Enter service URL")
           .setValue(this.plugin.settings.opencodeBaseUrl)
           .onChange(async (value) => {
             this.plugin.settings.opencodeBaseUrl = value;
@@ -73,11 +73,27 @@ export class OnyxMindSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("Provider")
+      .setDesc("AI model provider.")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("openai", "OpenAI")
+          .addOption("anthropic", "Anthropic")
+          .addOption("kimi", "Kimi")
+          .addOption("kimi-for-coding", "Kimi for coding")
+          .setValue(this.plugin.settings.providerId)
+          .onChange(async (value) => {
+            this.plugin.settings.providerId = value;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
       .setName("API key")
-      .setDesc("Your Anthropic API key for Claude models.")
+      .setDesc("API key for model provider.")
       .addText((text) => {
         text
-          .setPlaceholder("sk-ant-...")
+          .setPlaceholder("Enter API key")
           .setValue(this.plugin.settings.apiKey)
           .onChange(async (value) => {
             this.plugin.settings.apiKey = value;
@@ -89,24 +105,11 @@ export class OnyxMindSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Provider ID")
-      .setDesc("AI provider identifier (e.g., kimi-for-coding, anthropic).")
-      .addText((text) =>
-        text
-          .setPlaceholder("kimi-for-coding")
-          .setValue(this.plugin.settings.providerId)
-          .onChange(async (value) => {
-            this.plugin.settings.providerId = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
       .setName("Model")
       .setDesc("Model identifier to use.")
       .addText((text) =>
         text
-          .setPlaceholder("kimi-for-coding/k2p5")
+          .setPlaceholder("Enter model ID")
           .setValue(this.plugin.settings.modelId)
           .onChange(async (value) => {
             this.plugin.settings.modelId = value;

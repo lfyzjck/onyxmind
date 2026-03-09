@@ -74,7 +74,7 @@ onyxmind/
 │       └── editor-commands.ts
 ├── styles.css               # 样式文件
 ├── manifest.json            # 插件清单
-└── 设计文档/
+└── docs/
     ├── PRD.md
     ├── ARCHITECTURE.md
     ├── OBSIDIAN_BEST_PRACTICES.md
@@ -82,74 +82,8 @@ onyxmind/
     └── IMPLEMENTATION_EXAMPLE.ts
 ```
 
-## 开发流程
+## 开发规范
 
-### 当前阶段: 准备工作
-
-下一步任务:
-
-1. 安装 OpenCode SDK: `npm install @opencode-ai/sdk`
-2. 实现 OpencodeService 基础功能
-3. 创建简单的聊天界面
-
-### 实现优先级
-
-**P0 (MVP 必需)**:
-
-- 基础对话界面
-- OpenCode SDK 集成
-- 简单问答功能
-- 基础配置页面
-
-**P1 (重要功能)**:
-
-- 流式响应显示
-- 文件操作可视化
-- 快速命令集成
-- 对话历史管理
-
-详细路线图见 `ROADMAP.md`
-
-## 代码示例参考
-
-完整的实现示例见 `IMPLEMENTATION_EXAMPLE.ts`，包含:
-
-- 插件主类实现
-- OpenCode 服务封装
-- 会话管理器
-- 聊天视图
-- 设置页面
-
-所有代码遵循 Obsidian 最佳实践。
-
-## 注意事项
-
-1. **参考 infio-copilot 时**
-   - 学习 UI 实现模式和用户交互设计
-   - 注意其可能未遵循所有 Obsidian 最佳实践
-   - 始终以本项目的 `OBSIDIAN_BEST_PRACTICES.md` 为准
-
-2. **OpenCode 集成**
-   - 所有文件操作由 OpenCode Agent 完成
-   - 插件只负责 UI 和请求转发
-   - 使用流式响应提升用户体验
-
-3. **测试要求**
-   - 桌面端 (Windows/macOS/Linux)
-   - 移动端 (iOS/Android)
-   - 键盘导航测试
-   - 性能测试
-
-## 问题排查
-
-如遇到问题，按以下顺序排查:
-
-1. 检查是否遵循 `OBSIDIAN_BEST_PRACTICES.md`
-2. 参考 `IMPLEMENTATION_EXAMPLE.ts` 的实现模式
-3. 查看 infio-copilot 的类似功能实现
-4. 查阅 Obsidian API 文档
-5. 检查 OpenCode SDK 文档
-
-## 更新日志
-
-- 2026-02-13: 创建初始版本，添加 infio-copilot 参考路径
+1. 我们遵循 fail-fast 原则，除非必要否则不增加容错代码;
+2. 每次完成代码编写，你需要执行 `bun run lint` 验证代码的格式问题并进行修复;
+3. 所有检查完成后，你需要执行 `bun run build` 构建插件;

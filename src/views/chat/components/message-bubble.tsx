@@ -20,7 +20,9 @@ export function MessageBubble(props: MessageBubbleProps) {
     plugin.settings.showToolCallsAfterStreaming &&
     messageTools.length > 0;
   const hasThinkingLabel =
-    message.role === "assistant" && message.hasThinking === true;
+    message.role === "assistant" &&
+    message.hasThinking &&
+    message.content.length > 0 === true;
   const containerClassName = [
     "onyxmind-message",
     `onyxmind-message-${message.role}`,
@@ -32,10 +34,15 @@ export function MessageBubble(props: MessageBubbleProps) {
   return (
     <div className={containerClassName}>
       <div className="onyxmind-message-body">
-        {shouldShowToolCalls && <ToolUseList tools={messageTools} />}
+        {shouldShowToolCalls && (
+          <ToolUseList
+            tools={messageTools}
+            vaultPath={plugin.opencodeService.getVaultPath() ?? undefined}
+          />
+        )}
         <MarkdownBlock
           plugin={plugin}
-          content={message.content}
+          content={message.displayContent ?? message.content}
           className={CSS_CLASS_PART_TEXT}
         />
       </div>

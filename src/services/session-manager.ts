@@ -3,29 +3,40 @@
  * Manages conversation sessions and their history
  */
 
-import type {
-  OpencodeService,
-  Message,
-  RemoteSessionSummary,
-} from "./opencode-service";
+import { Session } from "@opencode-ai/sdk/v2";
+import type { OpencodeService, Message, StreamChunk } from "./opencode-service";
 
-export interface Session {
+export interface OnyxMindSession {
   id: string;
   title: string;
   messages: Message[];
   createdAt: number;
   updatedAt: number;
+  summarized?: boolean;
 }
 
 export type CreateSessionError = "limit-reached" | "service-error";
 
 export interface CreateSessionResult {
-  session: Session | null;
+  session: OnyxMindSession | null;
   error?: CreateSessionError;
 }
 
+function isMessage(value: unknown): value is Message {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<Message>;
+  return (
+    (candidate.role === "user" || candidate.role === "assistant") &&
+    typeof candidate.content === "string" &&
+    typeof candidate.timestamp === "number"
+  );
+}
+
 export class SessionManager {
-  private sessions: Map<string, Session> = new Map();
+  private sessions: Map<string, OnyxMindSession> = new Map();
   private activeSessionId: string | null = null;
   private opencodeService: OpencodeService;
   private getMaxActiveSessions: () => number;
@@ -52,7 +63,7 @@ export class SessionManager {
       return { session: null, error: "service-error" };
     }
 
-    const session: Session = {
+    const session: OnyxMindSession = {
       id: sessionId,
       title: title || `Session ${this.sessions.size + 1}`,
       messages: [],
@@ -87,14 +98,14 @@ export class SessionManager {
   /**
    * Get a session by ID
    */
-  getSession(id: string): Session | undefined {
+  getSession(id: string): OnyxMindSession | undefined {
     return this.sessions.get(id);
   }
 
   /**
    * Get the active session
    */
-  getActiveSession(): Session | null {
+  getActiveSession(): OnyxMindSession | null {
     if (!this.activeSessionId) {
       return null;
     }
@@ -147,7 +158,7 @@ export class SessionManager {
 
     // If this was the active session, switch to the most recently updated remaining session
     if (this.activeSessionId === id) {
-      const next = this.getAllSessions()[0];
+      const next = this.getMostRecentSession();
       this.activeSessionId = next ? next.id : null;
     }
 
@@ -155,12 +166,27 @@ export class SessionManager {
   }
 
   /**
-   * Get all sessions
+   * Get all sessions sorted by creation time (oldest first, newest last).
+   * This ensures newly created sessions always receive the highest index number.
    */
-  getAllSessions(): Session[] {
+  getAllSessions(): OnyxMindSession[] {
     return Array.from(this.sessions.values()).sort(
-      (a, b) => b.updatedAt - a.updatedAt,
+      (a, b) => a.createdAt - b.createdAt,
     );
+  }
+
+  /**
+   * Return the most recently updated session, used as a fallback when the
+   * active session is removed.
+   */
+  private getMostRecentSession(): OnyxMindSession | null {
+    let best: OnyxMindSession | null = null;
+    for (const session of this.sessions.values()) {
+      if (!best || session.updatedAt > best.updatedAt) {
+        best = session;
+      }
+    }
+    return best;
   }
 
   /**
@@ -183,6 +209,57 @@ export class SessionManager {
       session.title = title;
       session.updatedAt = Date.now();
     }
+  }
+
+  /**
+   * Mark session as summarized
+   */
+  markSessionSummarized(sessionId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (session) {
+      session.summarized = true;
+    }
+  }
+
+  /**
+   * Check if session has been summarized
+   */
+  isSessionSummarized(sessionId: string): boolean {
+    const session = this.sessions.get(sessionId);
+    return session?.summarized ?? false;
+  }
+
+  /**
+   * Summarize active session and update its title
+   */
+  async summarizeActiveSession(): Promise<boolean> {
+    const session = this.getActiveSession();
+    if (!session) {
+      return false;
+    }
+
+    if (session.summarized) {
+      return true;
+    }
+
+    const title = await this.opencodeService.summarizeSession(session.id);
+    if (!title) {
+      return false;
+    }
+
+    // Update session metadata on server
+    const updateSuccess = await this.opencodeService.updateSession(session.id, {
+      title,
+    });
+    if (!updateSuccess) {
+      console.warn(
+        "[OnyxMind] Failed to update session metadata on server, but continuing with local update",
+      );
+    }
+
+    this.updateSessionTitle(session.id, title);
+    this.markSessionSummarized(session.id);
+    return true;
   }
 
   /**
@@ -212,9 +289,63 @@ export class SessionManager {
    */
   fromJSON(json: string): void {
     try {
-      const data = JSON.parse(json);
-      this.sessions = new Map(data.sessions);
-      this.activeSessionId = data.activeSessionId;
+      const parsed: unknown = JSON.parse(json);
+      if (!parsed || typeof parsed !== "object") {
+        return;
+      }
+
+      const data = parsed as {
+        sessions?: unknown;
+        activeSessionId?: unknown;
+      };
+
+      const sessions = new Map<string, OnyxMindSession>();
+      if (Array.isArray(data.sessions)) {
+        for (const entry of data.sessions) {
+          if (!Array.isArray(entry) || entry.length < 2) {
+            continue;
+          }
+
+          const tuple = entry as unknown[];
+          const id = tuple[0];
+          const rawSession = tuple[1];
+          if (
+            typeof id !== "string" ||
+            !rawSession ||
+            typeof rawSession !== "object"
+          ) {
+            continue;
+          }
+
+          const session = rawSession as Partial<OnyxMindSession>;
+          if (typeof session.title !== "string") {
+            continue;
+          }
+
+          sessions.set(id, {
+            id,
+            title: session.title,
+            messages: Array.isArray(session.messages)
+              ? session.messages.filter((message) => isMessage(message))
+              : [],
+            createdAt:
+              typeof session.createdAt === "number"
+                ? session.createdAt
+                : Date.now(),
+            updatedAt:
+              typeof session.updatedAt === "number"
+                ? session.updatedAt
+                : Date.now(),
+          });
+        }
+      }
+
+      this.sessions = sessions;
+      this.activeSessionId =
+        typeof data.activeSessionId === "string" &&
+        this.sessions.has(data.activeSessionId)
+          ? data.activeSessionId
+          : null;
     } catch (error) {
       console.error("Failed to load sessions:", error);
     }
@@ -264,13 +395,14 @@ export class SessionManager {
    * Refresh local session index from OpenCode session.list filtered by current vault directory
    */
   async refreshSessionsFromService(): Promise<boolean> {
-    const remoteSessions = await this.opencodeService.listSessions();
+    const remoteSessions: Session[] | null =
+      await this.opencodeService.listSessions();
     if (!remoteSessions) {
       return false;
     }
 
     const previousSessions = this.sessions;
-    const next = new Map<string, Session>();
+    const next = new Map<string, OnyxMindSession>();
     for (const remote of remoteSessions) {
       const existing = this.sessions.get(remote.id);
       next.set(remote.id, this.mergeRemoteSession(remote, existing));
@@ -286,22 +418,49 @@ export class SessionManager {
 
     this.sessions = next;
     if (!this.activeSessionId || !this.sessions.has(this.activeSessionId)) {
-      const nextActive = this.getAllSessions()[0];
+      const nextActive = this.getMostRecentSession();
       this.activeSessionId = nextActive ? nextActive.id : null;
     }
     return true;
   }
 
   private mergeRemoteSession(
-    remote: RemoteSessionSummary,
-    existing?: Session,
-  ): Session {
+    remote: Session,
+    existing?: OnyxMindSession,
+  ): OnyxMindSession {
     return {
       id: remote.id,
       title: remote.title || existing?.title || "Session",
       messages: existing?.messages ?? [],
-      createdAt: existing?.createdAt ?? remote.createdAt,
-      updatedAt: Math.max(existing?.updatedAt ?? 0, remote.updatedAt),
+      createdAt: existing?.createdAt ?? remote.time.created,
+      updatedAt: Math.max(existing?.updatedAt ?? 0, remote.time.updated),
     };
+  }
+
+  /**
+   * Send a prompt to a session and return a streaming response iterator
+   */
+  async sendPrompt(
+    sessionId: string,
+    prompt: string,
+  ): Promise<AsyncIterableIterator<StreamChunk> | null> {
+    return this.opencodeService.sendPrompt(sessionId, prompt);
+  }
+
+  /**
+   * Abort a running session request
+   */
+  async abortSession(sessionId: string): Promise<boolean> {
+    return this.opencodeService.abortSession(sessionId);
+  }
+
+  /**
+   * Reply to a question asked during streaming
+   */
+  async replyToQuestion(
+    questionId: string,
+    answers: string[][],
+  ): Promise<boolean> {
+    return this.opencodeService.replyToQuestion(questionId, answers);
   }
 }

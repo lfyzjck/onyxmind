@@ -6,8 +6,8 @@
  * common binary locations so the OpenCode SDK can spawn the server process.
  */
 
-import * as fs from "fs";
-import * as path from "path";
+import path from "path";
+import fs from "fs";
 
 const isWindows = process.platform === "win32";
 const PATH_SEPARATOR = isWindows ? ";" : ":";

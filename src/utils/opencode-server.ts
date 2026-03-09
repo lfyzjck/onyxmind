@@ -38,7 +38,7 @@ export async function createOpencodeServerPatched(
   }
 
   // Patch: pass cors origins as individual --cors=<origin> args
-  const corsOrigins = (opts.config as any)?.server?.cors;
+  const corsOrigins = opts.config?.server?.cors;
   if (Array.isArray(corsOrigins)) {
     for (const origin of corsOrigins) {
       if (typeof origin === "string" && origin.length > 0) {

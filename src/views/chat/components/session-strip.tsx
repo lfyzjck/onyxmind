@@ -1,4 +1,4 @@
-import type { Session } from "../../../services/session-manager";
+import type { OnyxMindSession } from "../../../services/session-manager";
 import {
   ARIA_LABEL_CLEAR_MESSAGES,
   ARIA_LABEL_NEW_SESSION,
@@ -8,7 +8,7 @@ import {
 } from "../constants";
 
 interface SessionStripProps {
-  sessions: Session[];
+  sessions: OnyxMindSession[];
   activeSessionId: string | null;
   onSwitchSession: (sessionId: string) => void;
   onCloseSession: (sessionId: string) => void;
@@ -38,7 +38,8 @@ export function SessionStrip(props: SessionStripProps) {
           <button
             key={session.id}
             className={`onyxmind-session-item ${session.id === activeSessionId ? CLASS_IS_ACTIVE : ""}`}
-            aria-label={`Switch to session ${index + 1}`}
+            aria-label={session.title}
+            title={session.title}
             onClick={() => onSwitchSession(session.id)}
           >
             <span className="onyxmind-session-index">{index + 1}</span>

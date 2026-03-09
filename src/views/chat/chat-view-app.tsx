@@ -17,10 +17,7 @@ export function ChatViewApp(props: ChatViewAppProps) {
 
   return (
     <div className="onyxmind-chat-container">
-      <ChatHeader
-        scopeLabel={controller.scopeLabel}
-        onRefresh={controller.handleToolbarRefresh}
-      />
+      <ChatHeader />
 
       <MessagesPanel
         plugin={plugin}
@@ -30,6 +27,8 @@ export function ChatViewApp(props: ChatViewAppProps) {
         streamText={controller.streamText}
         streamThinking={controller.streamThinking}
         streamTools={controller.toolChunks}
+        onQuestionReply={controller.handleQuestionReply}
+        onSelectCapability={(prompt) => void controller.sendMessage(prompt)}
         errors={controller.errors}
       />
 
@@ -53,6 +52,9 @@ export function ChatViewApp(props: ChatViewAppProps) {
           slashSelectedIndex={controller.slashSelectedIndex}
           providerId={controller.providerId}
           modelId={controller.modelId}
+          noteChipPath={controller.noteChipPath}
+          activeQuestion={controller.activeQuestion}
+          onQuestionReply={controller.handleQuestionReply}
           onInputChange={controller.handleInputChange}
           onInputClick={controller.handleInputClick}
           onInputKeyUp={controller.handleInputKeyUp}
@@ -64,6 +66,7 @@ export function ChatViewApp(props: ChatViewAppProps) {
           onApplySlashCommand={controller.handleApplySlashCommand}
           onSubmit={controller.handleSubmit}
           onAbort={controller.handleAbort}
+          onRemoveNote={controller.handleRemoveNote}
         />
       </div>
     </div>

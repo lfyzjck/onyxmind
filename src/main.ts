@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, Notice } from "obsidian";
+import { Plugin, Notice } from "obsidian";
 import {
   DEFAULT_SETTINGS,
   OnyxMindSettings,
@@ -24,23 +24,20 @@ export default class OnyxMindPlugin extends Plugin {
       this.opencodeService,
       () => this.settings.maxActiveSessions,
     );
-    this.chatService = new ChatService(
-      this.opencodeService,
-      this.sessionManager,
-    );
+    this.chatService = new ChatService(this.sessionManager);
 
     // Initialize OpenCode client
     const initialized = await this.opencodeService.initialize();
     if (!initialized) {
-      new Notice("Failed to initialize OpenCode. Please check your settings.");
+      new Notice("Failed to initialize service. Check settings.");
     }
 
     // Register chat view
     this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));
 
     // Add ribbon icon
-    this.addRibbonIcon("message-square", "OnyxMind", () => {
-      this.activateView();
+    this.addRibbonIcon("message-square", "Open chat", () => {
+      void this.activateView();
     });
 
     // Register commands
@@ -51,7 +48,7 @@ export default class OnyxMindPlugin extends Plugin {
   }
 
   onunload() {
-    console.log("[OnyxMind] Plugin unloading...");
+    console.debug("[OnyxMind] Plugin unloading...");
     this.opencodeService.destroy();
   }
 
@@ -64,7 +61,7 @@ export default class OnyxMindPlugin extends Plugin {
       id: "open-chat",
       name: "Open chat",
       callback: () => {
-        this.activateView();
+        void this.activateView();
       },
     });
 
@@ -136,7 +133,7 @@ export default class OnyxMindPlugin extends Plugin {
     }
 
     if (leaf) {
-      workspace.revealLeaf(leaf);
+      void workspace.revealLeaf(leaf);
     }
   }
 
@@ -152,7 +149,12 @@ export default class OnyxMindPlugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const loaded: unknown = await this.loadData();
+    const data =
+      loaded && typeof loaded === "object"
+        ? (loaded as Partial<OnyxMindSettings>)
+        : {};
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
   }
 
   async saveSettings() {

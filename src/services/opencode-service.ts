@@ -5,7 +5,10 @@
 
 import { Notice, App } from "obsidian";
 import { createOpencodeClient } from "@opencode-ai/sdk/v2/client";
-import { createOpencodeServerPatched } from "../utils/opencode-server";
+import {
+  createOpencodeServerPatched,
+  type PatchedServerOptions,
+} from "../utils/opencode-server";
 import { execSync } from "child_process";
 import type { OnyxMindSettings } from "../settings";
 import { findOpencodeExecutable, getEnhancedPath } from "../utils/env";
@@ -19,14 +22,16 @@ import type {
   StructuredOutputError,
   ContextOverflowError,
   OpencodeClient,
+  Session,
+  Command,
+  Part,
+  TextPart,
+  ReasoningPart,
 } from "@opencode-ai/sdk/v2";
 
 // Network / server config
 const SERVER_HOSTNAME = "127.0.0.1";
 const OBSIDIAN_CORS_ORIGIN = "app://obsidian.md";
-
-// Default values
-const DEFAULT_SESSION_TITLE = "OnyxMind Session";
 
 // Error messages
 const ERROR_CLIENT_NOT_INITIALIZED = "OpenCode client not initialized";
@@ -36,6 +41,35 @@ const PART_TYPE_TEXT = "text";
 const PART_TYPE_REASONING = "reasoning";
 const PART_TYPE_TOOL = "tool";
 
+type OpencodeServerInstance = Awaited<
+  ReturnType<typeof createOpencodeServerPatched>
+>;
+
+function getVaultBasePath(app: App): string {
+  return app.vault.getRoot().path;
+}
+
+type SessionError =
+  | ApiError
+  | ProviderAuthError
+  | UnknownError
+  | MessageOutputLengthError
+  | MessageAbortedError
+  | StructuredOutputError
+  | ContextOverflowError;
+
+function extractErrorMessage(err: SessionError): string {
+  if (
+    "data" in err &&
+    err.data &&
+    typeof err.data === "object" &&
+    "message" in err.data
+  ) {
+    return `[${err.name}] ${(err.data as { message: string }).message}`;
+  }
+  return err.name;
+}
+
 export interface Message {
   role: "user" | "assistant";
   content: string;
@@ -43,14 +77,7 @@ export interface Message {
   error?: string;
   tools?: StreamChunkToolUse[];
   hasThinking?: boolean;
-}
-
-export interface RemoteSessionSummary {
-  id: string;
-  title: string;
-  directory: string;
-  createdAt: number;
-  updatedAt: number;
+  displayContent?: string;
 }
 
 export interface AvailableCommand {
@@ -82,6 +109,7 @@ export interface StreamChunkToolUse {
   title?: string; // running / completed
   output?: string; // completed
   error?: string; // error
+  questionId?: string; // for question tools: the que_xxx ID needed to reply
 }
 
 /** A recoverable or fatal error occurred during generation */
@@ -96,40 +124,25 @@ export type StreamChunk =
   | StreamChunkToolUse
   | StreamChunkError;
 
-type SessionError =
-  | ApiError
-  | ProviderAuthError
-  | UnknownError
-  | MessageOutputLengthError
-  | MessageAbortedError
-  | StructuredOutputError
-  | ContextOverflowError;
-
-function extractErrorMessage(err: SessionError): string {
-  if (
-    "data" in err &&
-    err.data &&
-    typeof err.data === "object" &&
-    "message" in err.data
-  ) {
-    return `[${err.name}] ${(err.data as { message: string }).message}`;
-  }
-  return err.name;
-}
-
 export class OpencodeService {
-  private client: OpencodeClient | null = null;
+  private _client: OpencodeClient | null = null;
   private settings: OnyxMindSettings;
   private app: App;
-  private server: any = null;
+  private server: OpencodeServerInstance | null = null;
   private abortController: AbortController | null = null;
-  private vaultPath: string | null = null;
+  private vaultPath: string;
 
   private port = 4096;
+
+  private get client(): OpencodeClient {
+    if (!this._client) throw new Error(ERROR_CLIENT_NOT_INITIALIZED);
+    return this._client;
+  }
 
   constructor(app: App, settings: OnyxMindSettings) {
     this.app = app;
     this.settings = settings;
+    this.vaultPath = getVaultBasePath(app);
   }
 
   /**
@@ -148,15 +161,15 @@ export class OpencodeService {
         for (const pid of pids) {
           try {
             execSync(`kill -9 ${pid}`);
-            console.log(
+            console.debug(
               `[OnyxMind] Killed residual process ${pid} on port ${this.port}`,
             );
-          } catch (_) {
+          } catch {
             /* already dead */
           }
         }
       }
-    } catch (_) {
+    } catch {
       /* no process on port, that's fine */
     }
   }
@@ -167,7 +180,7 @@ export class OpencodeService {
    */
   async initialize(): Promise<boolean> {
     try {
-      console.log("[OnyxMind] Initializing OpenCode with full server...");
+      console.debug("[OnyxMind] Initializing OpenCode with full server...");
 
       // Kill any residual process from a previous session
       this.killPortProcess();
@@ -184,20 +197,11 @@ export class OpencodeService {
         console.error("[OnyxMind]", msg);
         return false;
       }
-      console.log("[OnyxMind] Found opencode at:", execPath);
+      console.debug("[OnyxMind] Found opencode at:", execPath);
 
       this.abortController = new AbortController();
 
       // Build the Obsidian-aware system prompt for the build agent
-      this.vaultPath =
-        ((this.app as any).vault.adapter.basePath as string | undefined) ??
-        null;
-      if (!this.vaultPath) {
-        const msg = "Failed to detect vault path.";
-        new Notice(msg);
-        console.error("[OnyxMind]", msg);
-        return false;
-      }
       const agentPrompt = buildAgentPrompt({ vaultPath: this.vaultPath });
 
       // 1. 启动 server（使用 patch 版本，cors 同时通过 --cors 参数传入）
@@ -235,18 +239,18 @@ export class OpencodeService {
               "https://github.com/kepano/obsidian-skills/tree/main/skills",
             ],
           },
-        } as any,
+        } as PatchedServerOptions["config"],
       });
 
       this.server = serverResult;
 
       // 2. 创建 client，连接到 server
-      this.client = createOpencodeClient({
+      this._client = createOpencodeClient({
         baseUrl: serverResult.url,
         directory: this.vaultPath,
       });
 
-      console.log("[OnyxMind] OpenCode initialized successfully");
+      console.debug("[OnyxMind] OpenCode initialized successfully");
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -261,7 +265,7 @@ export class OpencodeService {
    * Safe to call from onunload() which is synchronous
    */
   destroy(): void {
-    console.log("[OnyxMind] Destroying OpenCode server...");
+    console.debug("[OnyxMind] Destroying OpenCode server...");
     if (this.abortController) {
       this.abortController.abort();
       this.abortController = null;
@@ -269,13 +273,12 @@ export class OpencodeService {
     if (this.server) {
       try {
         this.server.close();
-      } catch (_) {
+      } catch {
         /* proc already killed by abort */
       }
       this.server = null;
     }
-    this.client = null;
-    this.vaultPath = null;
+    this._client = null;
     // Fallback: force-kill anything still on the port
     this.killPortProcess();
   }
@@ -284,65 +287,25 @@ export class OpencodeService {
    * Check if the service is initialized
    */
   isInitialized(): boolean {
-    return this.client !== null;
-  }
-
-  /**
-   * Get underlying OpenCode client
-   */
-  getClient(): OpencodeClient {
-    if (!this.client) {
-      throw new Error("OpenCode client not initialized");
-    }
-    return this.client;
+    return this._client !== null;
   }
 
   /**
    * Get current vault path used for OpenCode directory scoping
    */
-  getVaultPath(): string | null {
+  getVaultPath(): string {
     return this.vaultPath;
   }
 
   /**
    * List sessions under current vault directory scope
    */
-  async listSessions(): Promise<RemoteSessionSummary[] | null> {
-    if (!this.client) {
-      return null;
-    }
-
-    const vaultPath =
-      this.vaultPath ?? (this.app as any).vault.adapter.basePath;
-    if (!vaultPath) {
-      return null;
-    }
-
+  async listSessions(): Promise<Session[] | null> {
     try {
       const response = await this.client.session.list({
-        directory: vaultPath,
+        directory: this.vaultPath,
       });
-
-      if (!("data" in response) || !Array.isArray(response.data)) {
-        return [];
-      }
-
-      return response.data
-        .filter((item: any) => item && typeof item.id === "string")
-        .map((item: any) => ({
-          id: item.id,
-          title: typeof item.title === "string" ? item.title : "Session",
-          directory:
-            typeof item.directory === "string" ? item.directory : vaultPath,
-          createdAt:
-            typeof item.time?.created === "number"
-              ? item.time.created
-              : Date.now(),
-          updatedAt:
-            typeof item.time?.updated === "number"
-              ? item.time.updated
-              : Date.now(),
-        }));
+      return response.data ?? [];
     } catch (error) {
       console.error("[OnyxMind] Failed to list sessions:", error);
       return null;
@@ -353,37 +316,20 @@ export class OpencodeService {
    * List available slash commands under current vault directory scope
    */
   async listCommands(): Promise<AvailableCommand[] | null> {
-    if (!this.client) {
-      return null;
-    }
-
-    const vaultPath =
-      this.vaultPath ?? (this.app as any).vault.adapter.basePath;
-    if (!vaultPath) {
-      return null;
-    }
-
     try {
       const response = await this.client.command.list({
-        directory: vaultPath,
+        directory: this.vaultPath,
       });
 
-      if (!("data" in response) || !Array.isArray(response.data)) {
-        return [];
-      }
+      if (!response.data) return [];
 
       return response.data
-        .filter((item: any) => item && typeof item.name === "string")
         .map(
-          (item: any): AvailableCommand => ({
+          (item: Command): AvailableCommand => ({
             name: item.name,
-            description:
-              typeof item.description === "string" ? item.description : "",
-            source:
-              item.source === "mcp" || item.source === "skill"
-                ? item.source
-                : "command",
-            template: typeof item.template === "string" ? item.template : "",
+            description: item.description ?? "",
+            source: item.source ?? "command",
+            template: item.template,
           }),
         )
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -397,47 +343,31 @@ export class OpencodeService {
    * Load message history for a specific session in the current vault scope
    */
   async getSessionMessages(sessionId: string): Promise<Message[] | null> {
-    if (!this.client) {
-      return null;
-    }
-
-    const vaultPath =
-      this.vaultPath ?? (this.app as any).vault.adapter.basePath;
-    if (!vaultPath) {
-      return null;
-    }
-
     try {
       const response = await this.client.session.messages({
         sessionID: sessionId,
-        directory: vaultPath,
+        directory: this.vaultPath,
         limit: Math.max(1, this.settings.maxHistoryMessages),
       });
 
-      if (!("data" in response) || !Array.isArray(response.data)) {
-        return [];
-      }
+      if (!response.data) return [];
 
       const messages = response.data
-        .map((entry: any): Message | null => {
-          if (!entry || typeof entry !== "object" || !entry.info) {
-            return null;
-          }
-
-          const role = entry.info.role === "assistant" ? "assistant" : "user";
-          const timestamp =
-            typeof entry.info.time?.created === "number"
-              ? entry.info.time.created
-              : Date.now();
-          const reasoning = this.extractReasoningText(entry.parts);
+        .map((entry): Message | null => {
+          const info = entry.info;
+          const role = info.role === "assistant" ? "assistant" : "user";
+          const timestamp = info.time.created;
+          const parts = entry.parts;
+          const reasoning = this.extractReasoningText(parts);
           const hasReasoningText = reasoning.trim().length > 0;
-          const content = this.extractMessageText(entry.parts);
+          const content = this.extractMessageText(parts);
           const tools =
-            role === "assistant" ? this.extractToolParts(entry.parts) : [];
-          const error =
-            role === "assistant" && entry.info.error
-              ? this.formatSessionError(entry.info.error)
-              : undefined;
+            role === "assistant" ? this.extractToolParts(parts) : [];
+
+          let error: string | undefined;
+          if (info.role === "assistant" && info.error) {
+            error = extractErrorMessage(info.error);
+          }
 
           if (!content && !error && tools.length === 0) {
             return null;
@@ -453,9 +383,7 @@ export class OpencodeService {
               role === "assistant" && hasReasoningText ? true : undefined,
           };
         })
-        .filter(
-          (message: Message | null): message is Message => message !== null,
-        )
+        .filter((message): message is Message => message !== null)
         .sort((a, b) => a.timestamp - b.timestamp);
 
       return messages;
@@ -465,189 +393,75 @@ export class OpencodeService {
     }
   }
 
-  private extractMessageText(parts: unknown): string {
-    if (!Array.isArray(parts)) {
-      return "";
-    }
-
+  private extractMessageText(parts: Part[]): string {
     const text = parts
-      .filter(
-        (part: any) =>
-          part?.type === PART_TYPE_TEXT && typeof part.text === "string",
-      )
-      .map((part: any) => part.text)
+      .filter((p): p is TextPart => p.type === PART_TYPE_TEXT)
+      .map((p) => p.text)
       .join("");
 
-    if (text) {
-      return text;
-    }
+    if (text) return text;
 
     const reasoning = this.extractReasoningText(parts);
-    return reasoning.trim().length > 0 ? reasoning : "";
+    return reasoning.trim() ? reasoning : "";
   }
 
-  private extractReasoningText(parts: unknown): string {
-    if (!Array.isArray(parts)) {
-      return "";
-    }
-
+  private extractReasoningText(parts: Part[]): string {
     return parts
-      .filter(
-        (part: any) =>
-          part?.type === PART_TYPE_REASONING && typeof part.text === "string",
-      )
-      .map((part: any) => part.text)
+      .filter((p): p is ReasoningPart => p.type === PART_TYPE_REASONING)
+      .map((p) => p.text)
       .join("");
   }
 
-  private extractToolParts(parts: unknown): StreamChunkToolUse[] {
-    if (!Array.isArray(parts)) {
-      return [];
-    }
-
+  private extractToolParts(parts: Part[]): StreamChunkToolUse[] {
     const tools: StreamChunkToolUse[] = [];
     for (const part of parts) {
-      if (!part || typeof part !== "object") {
-        continue;
-      }
+      if (part.type !== PART_TYPE_TOOL) continue;
 
-      const raw = part as any;
-      if (
-        raw.type !== PART_TYPE_TOOL ||
-        typeof raw.tool !== "string" ||
-        typeof raw.id !== "string"
-      ) {
-        continue;
-      }
-
-      const state = raw.state;
-      if (!state || typeof state !== "object") {
-        continue;
-      }
-
-      const status =
-        state.status === "running" ||
-        state.status === "completed" ||
-        state.status === "error" ||
-        state.status === "pending"
-          ? state.status
-          : "pending";
-
-      const tool: StreamChunkToolUse = {
+      const state = part.state;
+      const chunk: StreamChunkToolUse = {
         type: "tool_use",
-        partId: raw.id,
-        tool: raw.tool,
-        status,
+        partId: part.id,
+        tool: part.tool,
+        status: state.status,
+        input: state.input,
       };
 
-      if (
-        state.input &&
-        typeof state.input === "object" &&
-        !Array.isArray(state.input)
-      ) {
-        tool.input = state.input as Record<string, unknown>;
+      if (state.status === "running" && state.title) chunk.title = state.title;
+      if (state.status === "completed") {
+        chunk.title = state.title;
+        chunk.output = state.output;
       }
+      if (state.status === "error") chunk.error = state.error;
 
-      if (typeof state.title === "string") {
-        tool.title = state.title;
-      }
-
-      if (state.output !== undefined && state.output !== null) {
-        tool.output = this.toDisplayString(state.output);
-      }
-
-      if (state.error !== undefined && state.error !== null) {
-        tool.error = this.toDisplayString(state.error);
-      }
-
-      tools.push(tool);
+      tools.push(chunk);
     }
-
     return tools;
-  }
-
-  private toDisplayString(value: unknown): string {
-    if (typeof value === "string") {
-      return value;
-    }
-    try {
-      return JSON.stringify(value, null, 2);
-    } catch (_) {
-      return String(value);
-    }
-  }
-
-  private formatSessionError(error: unknown): string {
-    if (error && typeof error === "object" && "name" in error) {
-      try {
-        return extractErrorMessage(error as SessionError);
-      } catch (_) {
-        // Fall through to generic formatting
-      }
-    }
-
-    if (error instanceof Error) {
-      return error.message;
-    }
-
-    return String(error);
   }
 
   /**
    * Create a new session
    */
   async createSession(title?: string): Promise<string | null> {
-    if (!this.client) {
-      console.error("[OnyxMind]", ERROR_CLIENT_NOT_INITIALIZED);
-      new Notice(ERROR_CLIENT_NOT_INITIALIZED);
-      return null;
-    }
-
     try {
-      console.log("[OnyxMind] Creating session:", title);
-
-      // Get vault path for directory parameter
-      const vaultPath =
-        this.vaultPath ?? (this.app as any).vault.adapter.basePath;
-      console.log("[OnyxMind] Using vault path:", vaultPath);
+      console.debug("[OnyxMind] Creating session:", title);
 
       const response = await this.client.session.create({
-        title: title || DEFAULT_SESSION_TITLE,
-        directory: vaultPath,
+        title: title,
+        directory: this.vaultPath,
       });
 
-      console.log("[OnyxMind] Session create response:", response);
-      console.log("[OnyxMind] Response data type:", response.data);
-
-      // Handle the response structure
-      if ("data" in response && response.data) {
-        // Check if data is the session object directly
-        if (typeof response.data === "object" && "id" in response.data) {
-          console.log(
-            "[OnyxMind] Session created successfully:",
-            response.data.id,
-          );
-          return response.data.id;
-        }
-
-        // Check if data is an array with session object
-        const dataArray = response.data as any;
-        if (Array.isArray(dataArray) && dataArray.length > 0) {
-          const session = dataArray[0];
-          if (typeof session === "object" && "id" in session) {
-            console.log(
-              "[OnyxMind] Session created successfully (from array):",
-              session.id,
-            );
-            return session.id;
-          }
-        }
+      if (!response?.data) {
+        const error = "Failed to create session: Invalid response structure";
+        console.error("[OnyxMind]", error, "Response:", response);
+        new Notice(error);
+        return null;
       }
 
-      const error = "Failed to create session: Invalid response structure";
-      console.error("[OnyxMind]", error, "Response:", response);
-      new Notice(error);
-      return null;
+      console.debug(
+        "[OnyxMind] Session created successfully:",
+        response.data.id,
+      );
+      return response.data.id;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("[OnyxMind] Session creation error:", error);
@@ -665,15 +479,9 @@ export class OpencodeService {
     sessionId: string,
     prompt: string,
   ): Promise<AsyncIterableIterator<StreamChunk> | null> {
-    if (!this.client) {
-      console.error("[OnyxMind]", ERROR_CLIENT_NOT_INITIALIZED);
-      new Notice(ERROR_CLIENT_NOT_INITIALIZED);
-      return null;
-    }
-
     try {
-      console.log("[OnyxMind] Sending prompt to session:", sessionId);
-      console.log("[OnyxMind] Prompt:", prompt.substring(0, 100) + "...");
+      console.debug("[OnyxMind] Sending prompt to session:", sessionId);
+      console.debug("[OnyxMind] Prompt:", prompt.substring(0, 100) + "...");
 
       // Send async prompt (non-blocking)
       await this.client.session.promptAsync({
@@ -685,7 +493,7 @@ export class OpencodeService {
         },
       });
 
-      console.log("[OnyxMind] Async prompt sent, subscribing to events...");
+      console.debug("[OnyxMind] Async prompt sent, subscribing to events...");
 
       // Subscribe to SSE events and stream the response
       return this.streamResponseFromEvents(sessionId);
@@ -704,6 +512,7 @@ export class OpencodeService {
    *   message.part.updated (text/delta)   → StreamChunkContent
    *   message.part.updated (reasoning)    → StreamChunkThinking
    *   message.part.updated (tool)         → StreamChunkToolUse
+   *   question.asked                      → StreamChunkToolUse (with questionId)
    *   session.error                       → StreamChunkError
    *   message.updated (assistant w/error) → StreamChunkError
    *   session.idle                        → end of stream
@@ -712,20 +521,22 @@ export class OpencodeService {
     sessionId: string,
   ): AsyncIterableIterator<StreamChunk> {
     try {
-      const events = await this.client!.event.subscribe();
+      const events = await this.client.event.subscribe();
 
       if (!events || !events.stream) {
         yield { type: "error", error: "No event stream available" };
         return;
       }
 
-      console.log(
+      console.debug(
         "[OnyxMind] Event stream subscribed, waiting for responses...",
       );
 
       let isIdle = false;
       // Track the current assistant message so we only emit parts that belong to it.
       let assistantMessageId: string | null = null;
+      // Track callID → partId mapping for question tools
+      const callIdToPartId = new Map<string, string>();
 
       for await (const event of events.stream) {
         switch (event.type) {
@@ -738,7 +549,7 @@ export class OpencodeService {
               assistantMessageId = info.id;
 
               // Only report error when the message is completed (time.completed set)
-              if (info.error && (info as any).time?.completed) {
+              if (info.error && typeof info.time.completed === "number") {
                 yield {
                   type: "error",
                   error: extractErrorMessage(info.error),
@@ -766,7 +577,12 @@ export class OpencodeService {
               if (text) yield { type: "thinking", text };
             } else if (part.type === PART_TYPE_TOOL) {
               const state = part.state;
-              if (!state) break;
+
+              // Track callID for question tools
+              if (part.tool === "question" && part.callID) {
+                callIdToPartId.set(part.callID, part.id);
+              }
+
               const chunk: StreamChunkToolUse = {
                 type: "tool_use",
                 partId: part.id,
@@ -802,27 +618,50 @@ export class OpencodeService {
             break;
           }
 
+          // ── Question asked ────────────────────────────────────────────
+          case "question.asked": {
+            const props = event.properties;
+            if (props.sessionID !== sessionId) break;
+
+            // Find the corresponding tool part via callID
+            const callId = props.tool?.callID;
+            const partId = callId ? callIdToPartId.get(callId) : null;
+
+            if (partId) {
+              // Emit an update to the existing tool chunk with questionId
+              yield {
+                type: "tool_use",
+                partId,
+                tool: "question",
+                status: "running",
+                questionId: props.id,
+              };
+            }
+            break;
+          }
+
           // ── Stream termination ────────────────────────────────────────
           case "session.idle": {
             if (event.properties.sessionID === sessionId) {
-              console.log("[OnyxMind] Session idle, streaming complete");
+              console.debug("[OnyxMind] Session idle, streaming complete");
               isIdle = true;
             }
             break;
           }
 
-          case "session.status":
-            console.log(
+          case "session.status": {
+            console.debug(
               "[OnyxMind] Session status:",
-              (event.properties as any).status?.type,
+              event.properties.status.type,
             );
             break;
+          }
         }
 
         if (isIdle) break;
       }
 
-      console.log("[OnyxMind] Event stream completed");
+      console.debug("[OnyxMind] Event stream completed");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("[OnyxMind Error] Event stream error:", error);
@@ -838,14 +677,10 @@ export class OpencodeService {
    * Sends an interrupt signal to the OpenCode server ([Request interrupted by user])
    */
   async abortSession(sessionId: string): Promise<boolean> {
-    if (!this.client) {
-      return false;
-    }
-
     try {
-      console.log("[OnyxMind] Aborting session:", sessionId);
+      console.debug("[OnyxMind] Aborting session:", sessionId);
       await this.client.session.abort({ sessionID: sessionId });
-      console.log("[OnyxMind] Session aborted:", sessionId);
+      console.debug("[OnyxMind] Session aborted:", sessionId);
       return true;
     } catch (error) {
       console.error("[OnyxMind Error] Failed to abort session:", error);
@@ -857,10 +692,6 @@ export class OpencodeService {
    * Delete a session
    */
   async deleteSession(sessionId: string): Promise<boolean> {
-    if (!this.client) {
-      return false;
-    }
-
     try {
       await this.client.session.delete({
         sessionID: sessionId,
@@ -878,7 +709,7 @@ export class OpencodeService {
   updateSettings(settings: OnyxMindSettings): void {
     this.settings = settings;
     // Reinitialize client with new settings
-    this.initialize();
+    void this.initialize();
   }
 
   /**
@@ -886,13 +717,8 @@ export class OpencodeService {
    * Based on tests/sse-prompt-test.js pattern
    */
   async sendPromptAsync(sessionId: string, prompt: string): Promise<boolean> {
-    if (!this.client) {
-      console.error("[OnyxMind Error] Client not initialized");
-      return false;
-    }
-
     try {
-      console.log("[OnyxMind] Sending async prompt:", {
+      console.debug("[OnyxMind] Sending async prompt:", {
         sessionId,
         promptLength: prompt.length,
       });
@@ -906,7 +732,7 @@ export class OpencodeService {
         },
       });
 
-      console.log("[OnyxMind] Async prompt sent:", response);
+      console.debug("[OnyxMind] Async prompt sent:", response);
       return true;
     } catch (error) {
       console.error("[OnyxMind Error] Failed to send async prompt:", error);
@@ -919,14 +745,9 @@ export class OpencodeService {
    * Returns an async iterator of events
    * Based on tests/sse-prompt-test.js pattern
    */
-  async subscribeToEvents(): Promise<AsyncIterable<any> | null> {
-    if (!this.client) {
-      console.error("[OnyxMind Error] Client not initialized");
-      return null;
-    }
-
+  async subscribeToEvents(): Promise<AsyncIterable<unknown> | null> {
     try {
-      console.log("[OnyxMind] Subscribing to event stream");
+      console.debug("[OnyxMind] Subscribing to event stream");
 
       const events = await this.client.event.subscribe();
 
@@ -935,11 +756,88 @@ export class OpencodeService {
         return null;
       }
 
-      console.log("[OnyxMind] Event stream subscribed");
+      console.debug("[OnyxMind] Event stream subscribed");
       return events.stream;
     } catch (error) {
       console.error("[OnyxMind Error] Failed to subscribe to events:", error);
       return null;
+    }
+  }
+
+  /**
+   * Reply to a question with user's answers
+   * answers: one Array<string> per question (selected option labels), in question order
+   */
+  async replyToQuestion(
+    questionId: string,
+    answers: string[][],
+  ): Promise<boolean> {
+    try {
+      console.debug("[OnyxMind] Replying to question:", questionId, answers);
+
+      const response = await this.client.question.reply({
+        requestID: questionId,
+        answers,
+      });
+
+      console.debug("[OnyxMind] Question reply response:", response);
+      return true;
+    } catch (error) {
+      console.error("[OnyxMind Error] Failed to reply to question:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Summarize a session and return the generated title, or null on failure
+   */
+  async summarizeSession(sessionId: string): Promise<string | null> {
+    try {
+      console.debug("[OnyxMind] Summarizing session:", sessionId);
+
+      const response = await this.client.session.summarize({
+        sessionID: sessionId,
+        directory: this.vaultPath,
+      });
+
+      if (!response.data) {
+        return null;
+      }
+
+      console.debug("[OnyxMind] Summarize response:", response);
+      const sessionResponse = await this.client.session.get({
+        sessionID: sessionId,
+        directory: this.vaultPath,
+      });
+
+      return sessionResponse.data?.title ?? null;
+    } catch (error) {
+      console.error("[OnyxMind Error] Failed to summarize session:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Update session metadata (title)
+   */
+  async updateSession(
+    sessionId: string,
+    updates: { title?: string },
+  ): Promise<boolean> {
+    try {
+      console.debug("[OnyxMind] Updating session:", sessionId, updates);
+
+      const response = await this.client.session.update({
+        sessionID: sessionId,
+        directory: this.vaultPath,
+        title: updates.title,
+      });
+
+      console.debug("[OnyxMind] Session update response:", response);
+      return true;
+    } catch (error) {
+      console.error("[OnyxMind Error] Failed to update session:", error);
+      return false;
     }
   }
 }
