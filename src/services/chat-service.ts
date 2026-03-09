@@ -3,14 +3,10 @@
  * Handles message interactions for a specific session
  */
 
-import type {
-  Message,
-  StreamChunkToolUse,
-  OpencodeService,
-} from "./opencode-service";
+import type { Message, StreamChunkToolUse } from "./opencode-service";
 import type {
   CreateSessionResult,
-  Session,
+  OnyxMindSession,
   SessionManager,
 } from "./session-manager";
 
@@ -26,14 +22,9 @@ export interface StreamResponseOptions {
 }
 
 export class ChatService {
-  private opencodeService: OpencodeService;
   private sessionManager: SessionManager;
 
-  constructor(
-    opencodeService: OpencodeService,
-    sessionManager: SessionManager,
-  ) {
-    this.opencodeService = opencodeService;
+  constructor(sessionManager: SessionManager) {
     this.sessionManager = sessionManager;
   }
 
@@ -51,7 +42,11 @@ export class ChatService {
   /**
    * Add a user message to session history
    */
-  addUserMessage(sessionId: string, content: string): Message | null {
+  addUserMessage(
+    sessionId: string,
+    content: string,
+    displayContent?: string,
+  ): Message | null {
     const session = this.sessionManager.getSession(sessionId);
     if (!session) {
       return null;
@@ -60,6 +55,7 @@ export class ChatService {
     const message: Message = {
       role: "user",
       content,
+      displayContent,
       timestamp: Date.now(),
     };
     this.sessionManager.addMessage(sessionId, message);
@@ -70,12 +66,12 @@ export class ChatService {
    * Stream assistant response for a specific session and persist final text message
    */
   async streamAssistantResponse(
-    session: Session,
+    session: OnyxMindSession,
     prompt: string,
     handlers: StreamResponseHandlers = {},
     options: StreamResponseOptions = {},
   ): Promise<Message | null> {
-    const stream = await this.opencodeService.sendPrompt(session.id, prompt);
+    const stream = await this.sessionManager.sendPrompt(session.id, prompt);
     if (!stream) {
       handlers.onError?.("Failed to send message");
       return null;
@@ -139,6 +135,17 @@ export class ChatService {
    * Abort a running session request
    */
   async abortSession(sessionId: string): Promise<boolean> {
-    return this.opencodeService.abortSession(sessionId);
+    return this.sessionManager.abortSession(sessionId);
+  }
+
+  /**
+   * Reply to a question asked during streaming
+   * answers: one Array<string> per question (selected labels), in question order
+   */
+  async replyToQuestion(
+    questionId: string,
+    answers: string[][],
+  ): Promise<boolean> {
+    return this.sessionManager.replyToQuestion(questionId, answers);
   }
 }

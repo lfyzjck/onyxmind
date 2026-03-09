@@ -26,7 +26,7 @@ export class ChatView extends ItemView {
   }
 
   getDisplayText(): string {
-    return "OnyxMind chat";
+    return "Chat";
   }
 
   getIcon(): string {

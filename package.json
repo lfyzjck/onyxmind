@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "test": "node --test tests/current-note-sanitizer.test.js",
     "version": "node version-bump.mjs && git add manifest.json versions.json",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -14,10 +15,7 @@
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
-    "pre-commit": "npx lint-staged"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,css,json,md}": "prettier --write"
+    "pre-commit": "npm run format:check"
   },
   "keywords": [],
   "license": "0-BSD",
@@ -28,7 +26,6 @@
     "eslint-plugin-obsidianmd": "0.1.9",
     "globals": "14.0.0",
     "jiti": "2.6.1",
-    "lint-staged": "^16.3.1",
     "prettier": "^3.8.1",
     "simple-git-hooks": "^2.13.1",
     "tslib": "2.4.0",

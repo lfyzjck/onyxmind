@@ -16,7 +16,7 @@ import type {
 } from "../../../services/opencode-service";
 import type {
   CreateSessionResult,
-  Session,
+  OnyxMindSession,
 } from "../../../services/session-manager";
 import { findSlashMatch } from "../slash";
 import type { ToolCardMap } from "../types";
@@ -24,7 +24,7 @@ import type { ToolCardMap } from "../types";
 interface UseChatControllerResult {
   messagesRef: RefObject<HTMLDivElement | null>;
   inputRef: RefObject<HTMLTextAreaElement | null>;
-  sessions: Session[];
+  sessions: OnyxMindSession[];
   activeSessionId: string | null;
   activeMessages: Message[];
   scopeLabel: string;
@@ -33,6 +33,7 @@ interface UseChatControllerResult {
   streamText: string;
   streamThinking: string;
   toolChunks: StreamChunkToolUse[];
+  activeQuestion: StreamChunkToolUse | null;
   errors: string[];
   slashMenuOpen: boolean;
   filteredCommands: AvailableCommand[];
@@ -55,7 +56,13 @@ interface UseChatControllerResult {
   handleApplySlashCommand: (command: AvailableCommand) => void;
   handleSubmit: () => void;
   handleAbort: () => void;
+  handleQuestionReply: (
+    questionId: string,
+    answers: string[][],
+  ) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
+  noteChipPath: string | null;
+  handleRemoveNote: () => void;
 }
 
 const ABORT_ERROR_NAME = "MessageAbortedError";
@@ -63,13 +70,25 @@ const ABORT_ERROR_NAME = "MessageAbortedError";
 export function useChatController(
   plugin: OnyxMindPlugin,
 ): UseChatControllerResult {
+  const sentNoteSessionIds = useRef<Set<string>>(new Set());
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const streamAbortRef = useRef<AbortController | null>(null);
   const isAbortingRef = useRef(false);
+  const activeSessionIdRef = useRef<string | null>(null);
+  const currentNotePathRef = useRef<string | null>(
+    plugin.app.workspace.getActiveFile()?.path ?? null,
+  );
+  const userRemovedNoteRef = useRef(false);
 
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<OnyxMindSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [currentNotePath, setCurrentNotePath] = useState<string | null>(
+    () => plugin.app.workspace.getActiveFile()?.path ?? null,
+  );
+  const [showNoteChip, setShowNoteChip] = useState<boolean>(
+    () => plugin.app.workspace.getActiveFile() !== null,
+  );
   const [inputText, setInputText] = useState("");
   const [commands, setCommands] = useState<AvailableCommand[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -101,6 +120,13 @@ export function useChatController(
   }, [plugin, sessions.length]);
 
   const toolChunks = useMemo(() => Object.values(streamTools), [streamTools]);
+  const activeQuestion = useMemo(
+    () =>
+      toolChunks.find(
+        (t) => t.tool === "question" && t.status === "running" && t.questionId,
+      ) ?? null,
+    [toolChunks],
+  );
   const slashMenuOpen = slashStart !== null && !isStreaming;
 
   const filteredCommands = useMemo((): AvailableCommand[] => {
@@ -230,6 +256,19 @@ export function useChatController(
     }
   }, [plugin]);
 
+  const handleQuestionReply = useCallback(
+    async (questionId: string, answers: string[][]): Promise<void> => {
+      const success = await plugin.chatService.replyToQuestion(
+        questionId,
+        answers,
+      );
+      if (!success) {
+        appendError("Failed to submit answer");
+      }
+    },
+    [appendError, plugin],
+  );
+
   const applySlashCommand = useCallback(
     (command: AvailableCommand): void => {
       if (slashStart === null) {
@@ -273,7 +312,23 @@ export function useChatController(
         return;
       }
 
-      const userMessage = plugin.chatService.addUserMessage(session.id, text);
+      let promptToSend = text;
+      let displayContent: string | undefined;
+      if (!sentNoteSessionIds.current.has(session.id)) {
+        const notePath = currentNotePathRef.current;
+        if (notePath && !userRemovedNoteRef.current) {
+          promptToSend = `${text}\n\n<current_note>\n${notePath}\n</current_note>`;
+          displayContent = text;
+        }
+        sentNoteSessionIds.current.add(session.id);
+        setShowNoteChip(false);
+      }
+
+      const userMessage = plugin.chatService.addUserMessage(
+        session.id,
+        promptToSend,
+        displayContent,
+      );
       if (!userMessage) {
         appendError("Failed to find the selected session");
         return;
@@ -290,7 +345,7 @@ export function useChatController(
       try {
         await plugin.chatService.streamAssistantResponse(
           session,
-          text,
+          promptToSend,
           {
             onContentDelta: async (delta) => {
               setStreamText((prev) => prev + delta);
@@ -327,6 +382,17 @@ export function useChatController(
         }
         setIsStreaming(false);
         await refreshSessionState();
+
+        // Summarize session after first complete conversation
+        if (
+          session.messages.length === 1 &&
+          !plugin.sessionManager.isSessionSummarized(session.id)
+        ) {
+          const success = await plugin.sessionManager.summarizeActiveSession();
+          if (success) {
+            await refreshSessionState();
+          }
+        }
       }
     },
     [
@@ -363,8 +429,19 @@ export function useChatController(
       return;
     }
 
+    userRemovedNoteRef.current = false;
+    const newPath = plugin.app.workspace.getActiveFile()?.path ?? null;
+    currentNotePathRef.current = newPath;
+    setCurrentNotePath(newPath);
+    setShowNoteChip(newPath !== null);
+
     await refreshSessionState();
   }, [handleSessionCreationError, isStreaming, plugin, refreshSessionState]);
+
+  const handleRemoveNote = useCallback(() => {
+    userRemovedNoteRef.current = true;
+    setShowNoteChip(false);
+  }, []);
 
   const handleClearMessages = useCallback((): void => {
     if (isStreaming) {
@@ -552,6 +629,25 @@ export function useChatController(
   }, [plugin, refreshCommands, refreshSessionState]);
 
   useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
+
+  useEffect(() => {
+    const ref = plugin.app.workspace.on("file-open", (file) => {
+      const newPath = file?.path ?? null;
+      currentNotePathRef.current = newPath;
+      setCurrentNotePath(newPath);
+      if (!sentNoteSessionIds.current.has(activeSessionIdRef.current ?? "")) {
+        userRemovedNoteRef.current = false;
+        setShowNoteChip(newPath !== null);
+      }
+    });
+    return () => {
+      plugin.app.workspace.offref(ref);
+    };
+  }, [plugin]);
+
+  useEffect(() => {
     if (!slashMenuOpen) {
       return;
     }
@@ -585,8 +681,8 @@ export function useChatController(
     if (!input) {
       return;
     }
-    input.style.height = "auto";
-    input.style.height = `${input.scrollHeight}px`;
+    input.setCssProps({ height: "auto" });
+    input.setCssProps({ height: `${input.scrollHeight}px` });
   }, [inputText]);
 
   useEffect(() => {
@@ -617,6 +713,7 @@ export function useChatController(
     streamText,
     streamThinking,
     toolChunks,
+    activeQuestion,
     errors,
     slashMenuOpen,
     filteredCommands,
@@ -640,6 +737,9 @@ export function useChatController(
     handleApplySlashCommand: applySlashCommand,
     handleSubmit: () => void handleSubmit(),
     handleAbort: () => void handleAbort(),
+    handleQuestionReply,
     sendMessage,
+    noteChipPath: showNoteChip ? currentNotePath : null,
+    handleRemoveNote,
   };
 }
