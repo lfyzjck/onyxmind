@@ -54,6 +54,36 @@ function getVaultBasePath(app: App): string {
   }
 }
 
+type SessionError =
+  | ProviderAuthError
+  | UnknownError
+  | MessageOutputLengthError
+  | MessageAbortedError
+  | StructuredOutputError
+  | ContextOverflowError
+  | ApiError;
+
+function extractErrorMessage(err: SessionError): string {
+  switch (err.name) {
+    case "ProviderAuthError":
+      return `Provider auth error (${err.data.providerID}): ${err.data.message}`;
+    case "UnknownError":
+      return err.data.message;
+    case "MessageOutputLengthError":
+      return "Response was cut off because the output length limit was reached.";
+    case "MessageAbortedError":
+      return err.data.message;
+    case "StructuredOutputError":
+      return `Structured output error (retried ${err.data.retries}x): ${err.data.message}`;
+    case "ContextOverflowError":
+      return err.data.message;
+    case "APIError": {
+      const status = err.data.statusCode ? ` [${err.data.statusCode}]` : "";
+      return `API error${status}: ${err.data.message}`;
+    }
+  }
+}
+
 export interface Message {
   role: "user" | "assistant";
   content: string;
