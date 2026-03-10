@@ -3,7 +3,7 @@
  * Encapsulates OpenCode SDK functionality
  */
 
-import { Notice, App } from "obsidian";
+import { Notice, App, FileSystemAdapter } from "obsidian";
 import { createOpencodeClient } from "@opencode-ai/sdk/v2/client";
 import {
   createOpencodeServerPatched,
@@ -46,28 +46,12 @@ type OpencodeServerInstance = Awaited<
 >;
 
 function getVaultBasePath(app: App): string {
-  return app.vault.getRoot().path;
-}
-
-type SessionError =
-  | ApiError
-  | ProviderAuthError
-  | UnknownError
-  | MessageOutputLengthError
-  | MessageAbortedError
-  | StructuredOutputError
-  | ContextOverflowError;
-
-function extractErrorMessage(err: SessionError): string {
-  if (
-    "data" in err &&
-    err.data &&
-    typeof err.data === "object" &&
-    "message" in err.data
-  ) {
-    return `[${err.name}] ${(err.data as { message: string }).message}`;
+  if (app.vault.adapter instanceof FileSystemAdapter) {
+    return app.vault.adapter.getBasePath();
+  } else {
+    // not support mobile device
+    throw new Error("Mobile device not supported");
   }
-  return err.name;
 }
 
 export interface Message {
@@ -143,6 +127,10 @@ export class OpencodeService {
     this.app = app;
     this.settings = settings;
     this.vaultPath = getVaultBasePath(app);
+    console.debug(
+      "[OnyxMind] OpencodeService constructor, vaultPath:",
+      this.vaultPath,
+    );
   }
 
   /**
@@ -204,7 +192,7 @@ export class OpencodeService {
       // Build the Obsidian-aware system prompt for the build agent
       const agentPrompt = buildAgentPrompt({ vaultPath: this.vaultPath });
 
-      // 1. 启动 server（使用 patch 版本，cors 同时通过 --cors 参数传入）
+      // 1. Start the server (patched version; CORS origins passed via --cors flag)
       const serverResult = await createOpencodeServerPatched({
         hostname: SERVER_HOSTNAME,
         port: this.port,

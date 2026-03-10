@@ -1,145 +1,145 @@
-这份基于 **OnyxMind** 的初始 PRD 框架非常清晰！结合我们刚刚讨论的“极致自动化管家”、“多维视图构建（Canvas/Bases）”以及“基于 OpenCode SDK 的 Tool Use”等核心切入点，我为你对这份 PRD 进行了**全面升级与重构**。
+The initial PRD framework for **OnyxMind** is very clear! Building on the core concepts we just discussed — "ultimate automation steward", "multi-dimensional view construction (Canvas/Bases)", and "Tool Use based on the OpenCode SDK" — I have performed a **comprehensive upgrade and restructure** of this PRD.
 
-这次更新保留了你原有的交互逻辑（对话面板、快捷命令、右键菜单），大幅增强了 **Agent 自动化执行能力** 和 **Obsidian 原生特性整合**。
+This update retains your original interaction logic (chat panel, quick commands, context menu) while significantly enhancing **Agent automation capabilities** and **Obsidian native feature integration**.
 
-以下是更新后的 PRD 文档：
-
----
-
-# OnyxMind 产品需求文档 (PRD) v2.0
-
-## 1. 产品概述
-
-### 1.1 产品定位
-
-OnyxMind 是一款基于 OpenCode AI Agent 框架的 **Obsidian 原生智能管家与场景化创作助手**。它不仅通过交互面板提供问答与生成，更通过底层 API 封装（Tool Use），在后台静默完成知识库的自动化整理、元数据维护及多维视图（Canvas/Bases）的构建。
-
-### 1.2 核心价值
-
-- **自动化整理 (The Steward)**：接管手动维护 YAML、标签和文件夹的繁琐工作，释放生产力。
-- **深度连接与检索 (Local RAG)**：基于本地笔记库内容进行上下文感知的问答与语义双链推荐。
-- **结构化可视化 (The Architect)**：突破文本限制，将长笔记自动转化为逻辑清晰的 Canvas 画布或 Bases 数据库视图。
-- **无缝集成**：复用 OpenCode Agent SDK，将所有文件操作封装为技能（Skills），确保高可扩展性。
-
-### 1.3 目标用户
-
-- **知识工作者/研究员**：需要管理海量笔记、快速检索并进行体系化输出。
-- **整理控/系统构建者**：热衷于构建个人知识图谱（PKM），但不愿陷入“维护疲劳”。
-- **内容创作者**：需要 AI 辅助收集素材、扩写及优化文章结构。
+The updated PRD document is as follows:
 
 ---
 
-## 2. 功能需求
+# OnyxMind Product Requirements Document (PRD) v2.0
 
-### 2.1 核心功能模块
+## 1. Product Overview
 
-#### 2.1.1 自动化管家引擎 (Steward Engine)
+### 1.1 Product Positioning
 
-**功能描述**：AI Agent 自动执行库级别的整理操作，降低“熵增”。
+OnyxMind is an **Obsidian-native intelligent steward and scene-based creative assistant** built on the OpenCode AI Agent framework. Beyond providing Q&A and content generation through an interactive panel, it silently performs automated knowledge base organization, metadata maintenance, and multi-dimensional view (Canvas/Bases) construction in the background through underlying API encapsulation (Tool Use).
 
-- **智能元数据 (Smart YAML) 与 Bases 整合**：自动分析笔记正文，补全摘要、关键词，并根据语境打上适配 Obsidian Bases 的标签与属性（如：项目状态、优先级）。
-- **语义双链与 MOC 维护**：在用户写作时，侧边栏静默推荐潜在的双向链接 `[[ ]]`；定期扫描孤立笔记并建议归档至 MOC（内容地图）。
-- **自动化文件流 (Auto-Filing)**：监控特定收件箱（Inbox），自动重命名文件并移动至目标目录。
+### 1.2 Core Value Propositions
 
-#### 2.1.2 结构化视图构建师 (Architect Engine)
+- **Automated Organization (The Steward)**: Takes over the tedious manual work of maintaining YAML, tags, and folders, freeing up productivity.
+- **Deep Connection and Retrieval (Local RAG)**: Context-aware Q&A and semantic backlink recommendations based on local note content.
+- **Structured Visualization (The Architect)**: Breaks beyond text limitations by automatically converting long notes into logically clear Canvas boards or Bases database views.
+- **Seamless Integration**: Reuses the OpenCode Agent SDK, encapsulating all file operations as Skills to ensure high extensibility.
 
-**功能描述**：将文本转化为 Obsidian 的高阶视图格式。
+### 1.3 Target Users
 
-- **AI to Canvas**：选中长文档，Agent 自动提取核心逻辑，拆解为多个卡片节点（Nodes），并在 Canvas 中自动连线（Edges）排版。
-- **AI to Excalidraw (扩展)**：通过自然语言指令，生成简单的 Excalidraw 流程图或架构草图（基于 JSON 注入）。
-- **任务自动提取**：扫描会议纪要或 Daily Note，提取 `[ ]` 待办事项，并同步至统一的 Bases 任务看板。
-
-#### 2.1.3 智能交互入口 (Interaction Interfaces)
-
-_(保留并增强了你原版的设计)_
-
-- **智能对话面板**：支持 Markdown、流式输出、引用跳转，实时显示 Agent 思考过程与工具调用状态。
-- **快速命令 (Command Palette)**：集成于 Obsidian 命令面板，一键触发“整理当前笔记属性”、“生成 Canvas”、“全文总结”等高频动作。
-- **上下文菜单 (Context Menu)**：划词右键，提供“解释、改写、提取任务、翻译”等局部操作。
-
-### 2.2 配置与底层设置
-
-#### 2.2.1 引擎与连接配置
-
-- **OpenCode 服务配置**：API Endpoint、密钥管理、模型选择（优先 Claude 3.5 Sonnet 等高智商模型）。
-- **本地隐私模式 (Local AI)**：预留 Ollama/Local RAG 接口配置，满足极客用户的绝对隐私需求。
-
-#### 2.2.2 Agent 行为与安全配置
-
-- **工具权限管理**：细粒度控制 Agent 的权限（如：允许读取、允许修改 YAML、禁止删除文件）。
-- **操作确认机制**：默认开启“破坏性操作（如批量移动、重命名）需用户二次确认”的选项。
-- **本地 RAG 索引设置**：配置向量库的更新频率（实时/定时）与排除文件夹。
+- **Knowledge Workers / Researchers**: Need to manage large volumes of notes, retrieve information quickly, and produce systematic outputs.
+- **Organization Enthusiasts / System Builders**: Passionate about building personal knowledge management systems (PKM) but unwilling to fall into "maintenance fatigue".
+- **Content Creators**: Need AI assistance in gathering materials, expanding drafts, and optimizing article structure.
 
 ---
 
-## 3. 非功能需求
+## 2. Functional Requirements
 
-### 3.1 性能与架构要求
+### 2.1 Core Feature Modules
 
-- **RAG 检索延迟**：本地语义检索耗时 < 1 秒。
-- **异步调度**：所有文件批量修改操作必须进入 **Job Queue（任务队列）**，绝对不阻塞 Obsidian 主 UI 线程。
-- **Token 优化**：采用本地预过滤（Local Pre-filter）机制，避免全库文本直接丢给大模型导致 Token 爆炸。
+#### 2.1.1 Automation Steward Engine (Steward Engine)
 
-### 3.2 安全与稳定性要求
+**Description**: AI Agent automatically performs vault-level organization operations to reduce "entropy increase".
 
-- **文件安全**：进行大规模操作（如整理几十篇笔记）前，自动创建快照或支持 Ctrl+Z 历史回滚。
-- **数据不出库**：非对话必要内容，不主动向云端发送文件，明确隐私边界。
+- **Smart Metadata (Smart YAML) and Bases Integration**: Automatically analyzes note content to complete summaries and keywords, and applies tags and properties adapted for Obsidian Bases (e.g., project status, priority) based on context.
+- **Semantic Backlinks and MOC Maintenance**: Silently recommends potential bidirectional links `[[ ]]` in the sidebar while the user is writing; periodically scans isolated notes and suggests archiving them to MOC (Maps of Content).
+- **Automated File Flow (Auto-Filing)**: Monitors a designated inbox, automatically renames files, and moves them to the target directory.
 
----
+#### 2.1.2 Structured View Architect (Architect Engine)
 
-## 4. 用户故事 (User Stories)
+**Description**: Converts text into Obsidian's higher-order view formats.
 
-### 4.1 自动化整理 (新增)
+- **AI to Canvas**: Select a long document and the Agent automatically extracts the core logic, breaks it into multiple card nodes (Nodes), and auto-connects them with edges (Edges) in Canvas.
+- **AI to Excalidraw (Extended)**: Generates simple Excalidraw flowcharts or architectural sketches via natural language instructions (based on JSON injection).
+- **Automatic Task Extraction**: Scans meeting notes or Daily Notes, extracts `[ ]` to-do items, and syncs them to a unified Bases task board.
 
-**作为** 一个有“整理强迫症”的用户
-**我想要** 随手把闪念记在 Inbox，然后通过 OnyxMind 自动打标签、分类并填好 Bases 属性
-**以便** 我能专注于记录，而不必每天花半小时拖拽文件和写 YAML。
+#### 2.1.3 Smart Interaction Interfaces
 
-### 4.2 可视化思考 (新增)
+_(Retains and enhances your original design)_
 
-**作为** 视觉学习者
-**我想要** 让 AI 帮我把一篇长达 5000 字的研报一键转化为 Obsidian Canvas
-**以便** 我能通过空间布局快速掌握文章的逻辑链条和核心论点。
+- **Smart Chat Panel**: Supports Markdown, streaming output, and reference navigation; displays the Agent's reasoning process and tool invocation status in real time.
+- **Quick Commands (Command Palette)**: Integrated into Obsidian's command palette to trigger high-frequency actions such as "Organize current note properties", "Generate Canvas", and "Full-text summary" with a single click.
+- **Context Menu**: Right-click on selected text to access local operations such as "Explain, Rewrite, Extract Tasks, Translate".
 
-### 4.3 知识问答与创作 (优化)
+### 2.2 Configuration and Underlying Settings
 
-**作为** 知识工作者/内容创作者
-**我想要** 在写作时唤起面板，让 AI 帮我检索本地库并生成结构化草稿
-**以便** 克服空白页恐惧，并最大化复用我过去的知识储备。
+#### 2.2.1 Engine and Connection Configuration
 
----
+- **OpenCode Service Configuration**: API Endpoint, key management, and model selection (preferring high-intelligence models such as Claude 3.5 Sonnet).
+- **Local Privacy Mode (Local AI)**: Reserved Ollama/Local RAG interface configuration to meet the absolute privacy requirements of power users.
 
-## 5. 优先级规划 (Roadmap)
+#### 2.2.2 Agent Behavior and Security Configuration
 
-### P0 (MVP 必需：跑通架构与核心痛点)
-
-- OpenCode SDK 底层集成与 Tool Registry 注册（读写文件、更新元数据）。
-- **智能对话面板**（基础问答 + UI 流式响应）。
-- **智能元数据管家**（一键补全 YAML 与 Bases 属性）。
-- 基础的本地检索（关键词或轻量级 RAG）。
-
-### P1 (重要功能：体验差异化)
-
-- **AI to Canvas**（长文转画布，核心亮点）。
-- **智能任务提取**（扫描 Daily Note 并同步至看板）。
-- 快速命令与上下文划词菜单。
-- 文件操作的可视化确认机制与回滚机制。
-
-### P2 (增强功能：生态深度融合)
-
-- **自动化文件流**（Inbox 自动归档与重命名）。
-- 实时语义双链推荐（写作侧边栏提示）。
-- 本地模型（Ollama）全面适配。
-
-### P3 (未来规划)
-
-- AI to Excalidraw 原型生成。
-- 多 Agent 协作（不同 Agent 负责不同文件夹）。
+- **Tool Permission Management**: Fine-grained control over Agent permissions (e.g., allow read, allow YAML modification, disallow file deletion).
+- **Operation Confirmation Mechanism**: The option "destructive operations (e.g., bulk move, rename) require user confirmation" is enabled by default.
+- **Local RAG Index Settings**: Configure the update frequency (real-time / scheduled) and excluded folders for the vector store.
 
 ---
 
-## 6. 成功指标
+## 3. Non-Functional Requirements
 
-- **核心粘性**：用户周活跃留存率（WAU） > 50%。
-- **功能渗透率**：“元数据补全”和“转化为 Canvas”工具的调用占比 > 总 AI 调用的 40%（证明其管家价值，而非纯聊天工具）。
-- **稳定性**：自动化文件操作导致的 Crash 或数据损坏率严格为 0%。
+### 3.1 Performance and Architecture Requirements
+
+- **RAG Retrieval Latency**: Local semantic retrieval must complete in < 1 second.
+- **Asynchronous Scheduling**: All batch file modification operations must enter a **Job Queue** and must never block the Obsidian main UI thread.
+- **Token Optimization**: A Local Pre-filter mechanism is used to avoid sending the entire vault's text directly to the large model, which would cause token overflow.
+
+### 3.2 Security and Stability Requirements
+
+- **File Safety**: Before large-scale operations (e.g., organizing dozens of notes), automatically create a snapshot or support Ctrl+Z history rollback.
+- **Data Stays Local**: Non-conversation-essential content is not proactively sent to the cloud, with clear privacy boundaries.
+
+---
+
+## 4. User Stories
+
+### 4.1 Automated Organization (New)
+
+**As** a user with an organizational obsession,
+**I want** to quickly jot down fleeting thoughts in the Inbox, then have OnyxMind automatically tag, categorize, and fill in Bases properties,
+**so that** I can focus on capturing ideas without spending half an hour every day dragging files and writing YAML.
+
+### 4.2 Visual Thinking (New)
+
+**As** a visual learner,
+**I want** AI to help me convert a 5,000-word research report into an Obsidian Canvas with a single click,
+**so that** I can quickly grasp the article's logical chain and core arguments through spatial layout.
+
+### 4.3 Knowledge Q&A and Creation (Improved)
+
+**As** a knowledge worker / content creator,
+**I want** to summon the panel while writing and have AI retrieve my local vault and generate a structured draft,
+**so that** I can overcome blank-page anxiety and maximize the reuse of my past knowledge.
+
+---
+
+## 5. Priority Planning (Roadmap)
+
+### P0 (MVP Required: Validate Architecture and Core Pain Points)
+
+- OpenCode SDK underlying integration and Tool Registry registration (read/write files, update metadata).
+- **Smart Chat Panel** (basic Q&A + streaming UI response).
+- **Smart Metadata Steward** (one-click completion of YAML and Bases properties).
+- Basic local retrieval (keyword-based or lightweight RAG).
+
+### P1 (Important Features: Experience Differentiation)
+
+- **AI to Canvas** (long-form to board conversion, core highlight).
+- **Smart Task Extraction** (scan Daily Notes and sync to task board).
+- Quick commands and context text-selection menu.
+- Visual confirmation and rollback mechanisms for file operations.
+
+### P2 (Enhanced Features: Deep Ecosystem Integration)
+
+- **Automated File Flow** (Inbox auto-archiving and renaming).
+- Real-time semantic backlink recommendations (writing sidebar hints).
+- Full local model (Ollama) compatibility.
+
+### P3 (Future Plans)
+
+- AI to Excalidraw prototype generation.
+- Multi-Agent collaboration (different Agents responsible for different folders).
+
+---
+
+## 6. Success Metrics
+
+- **Core Stickiness**: Weekly Active User (WAU) retention rate > 50%.
+- **Feature Penetration Rate**: "Metadata completion" and "Convert to Canvas" tool invocation share > 40% of total AI calls (proving steward value beyond being a pure chat tool).
+- **Stability**: Crash or data corruption rate caused by automated file operations is strictly 0%.

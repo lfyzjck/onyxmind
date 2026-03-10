@@ -1,79 +1,79 @@
-# OnyxMind MVP Demo - 快速开始
+# OnyxMind MVP Demo - Quick Start
 
-## 构建成功！✅
+## Build Successful! ✅
 
-插件已成功构建。现在可以在 Obsidian 中测试 OpenCode SDK 集成。
+The plugin has been built successfully. You can now test the OpenCode SDK integration in Obsidian.
 
-## 快速开始
+## Quick Start
 
-### 1. 在 Obsidian 中加载插件
+### 1. Load the Plugin in Obsidian
 
-**方法 A: 开发模式（推荐）**
+**Method A: Development Mode (Recommended)**
 
 ```bash
-# 在项目目录运行
+# Run in the project directory
 npm run dev
 ```
 
-然后在 Obsidian 中：
+Then in Obsidian:
 
-1. 打开设置 → 社区插件
-2. 关闭安全模式
-3. 点击"重新加载插件"
-4. 启用 "OnyxMind"
+1. Open Settings → Community Plugins
+2. Disable Safe Mode
+3. Click "Reload Plugins"
+4. Enable "OnyxMind"
 
-**方法 B: 手动复制**
-将以下文件复制到你的 vault 的 `.obsidian/plugins/onyxmind/` 目录：
+**Method B: Manual Copy**
+Copy the following files to the `.obsidian/plugins/onyxmind/` directory in your vault:
 
 - `main.js`
 - `manifest.json`
 - `styles.css`
 
-### 2. 运行测试
+### 2. Run Tests
 
-有两种方式运行测试：
+There are two ways to run tests:
 
-**方式 1: 使用 Ribbon 图标**
+**Method 1: Using the Ribbon Icon**
 
-- 点击左侧 Ribbon 栏的烧瓶图标 (🧪)
-- 所有测试将自动运行
+- Click the flask icon (🧪) in the left Ribbon bar
+- All tests will run automatically
 
-**方式 2: 使用命令面板**
+**Method 2: Using the Command Palette**
 
-1. 打开命令面板 (Cmd/Ctrl + P)
-2. 搜索 "Test OpenCode"
-3. 选择以下命令之一：
-   - `Test OpenCode: Check connection` - 测试服务连接
-   - `Test OpenCode: Import SDK` - 测试 SDK 导入
-   - `Test OpenCode: Create client` - 测试客户端创建
-   - `Test OpenCode: Run all tests` - 运行所有测试
+1. Open the Command Palette (Cmd/Ctrl + P)
+2. Search for "Test OpenCode"
+3. Select one of the following commands:
+   - `Test OpenCode: Check connection` - Test service connection
+   - `Test OpenCode: Import SDK` - Test SDK import
+   - `Test OpenCode: Create client` - Test client creation
+   - `Test OpenCode: Run all tests` - Run all tests
 
-## 当前测试内容
+## What the Current Tests Cover
 
-这个 MVP demo 包含 3 个基础测试：
+This MVP demo includes 3 basic tests:
 
-### 测试 1: 连接测试
+### Test 1: Connection Test
 
-- 检查 OpenCode 服务是否在 `localhost:8080` 上运行
-- 发送 HTTP GET 请求到 `/health` 端点
-- 验证服务可访问性
+- Checks if the OpenCode service is running at `localhost:8080`
+- Sends an HTTP GET request to the `/health` endpoint
+- Verifies service accessibility
 
-### 测试 2: SDK 导入测试
+### Test 2: SDK Import Test
 
-- 验证 `@opencode-ai/sdk/client` 可以正确导入
-- 检查 `createOpencodeClient` 函数是否存在
-- 输出 SDK 导出的所有方法到控制台
+- Verifies that `@opencode-ai/sdk/client` can be imported correctly
+- Checks whether the `createOpencodeClient` function exists
+- Outputs all methods exported by the SDK to the console
 
-### 测试 3: 客户端创建测试
+### Test 3: Client Creation Test
 
-- 使用 `createOpencodeClient` 创建客户端实例
-- 配置 baseUrl 为 `http://localhost:8080`
-- 验证客户端对象创建成功
-- 输出客户端方法到控制台
+- Creates a client instance using `createOpencodeClient`
+- Configures the baseUrl to `http://localhost:8080`
+- Verifies that the client object is created successfully
+- Outputs client methods to the console
 
-## 预期结果
+## Expected Results
 
-如果一切正常，你应该看到：
+If everything is working correctly, you should see:
 
 ```
 🚀 Starting OpenCode SDK tests...
@@ -84,98 +84,98 @@ npm run dev
 💡 Next: Configure API key and test actual prompts
 ```
 
-## 故障排查
+## Troubleshooting
 
 ### ❌ "OpenCode service not accessible"
 
-**原因**: OpenCode 服务未运行
+**Cause**: The OpenCode service is not running
 
-**解决方案**:
+**Solution**:
 
 ```bash
-# 如果还没安装 OpenCode
+# If OpenCode is not yet installed
 npm install -g @opencode-ai/cli
 
-# 启动服务
+# Start the service
 opencode serve --port 8080
 ```
 
 ### ❌ "SDK import failed"
 
-**原因**: SDK 未正确安装
+**Cause**: The SDK is not installed correctly
 
-**解决方案**:
+**Solution**:
 
 ```bash
-# 重新安装依赖
+# Reinstall dependencies
 npm install
 
-# 重新构建
+# Rebuild
 npm run build
 ```
 
-### ⚠️ 没有看到通知
+### ⚠️ No notifications appearing
 
-**解决方案**:
+**Solution**:
 
-1. 确认插件已启用（设置 → 社区插件）
-2. 打开开发者控制台查看错误 (Cmd/Ctrl + Shift + I)
-3. 尝试重新加载 Obsidian
+1. Confirm the plugin is enabled (Settings → Community Plugins)
+2. Open the Developer Console to check for errors (Cmd/Ctrl + Shift + I)
+3. Try reloading Obsidian
 
-## 查看详细日志
+## Viewing Detailed Logs
 
-打开开发者控制台查看详细输出：
+Open the Developer Console to see detailed output:
 
 - **macOS**: Cmd + Option + I
 - **Windows/Linux**: Ctrl + Shift + I
 
-控制台会显示：
+The console will display:
 
-- SDK 导出的所有方法
-- 客户端对象的所有方法
-- 任何错误的详细堆栈跟踪
+- All methods exported by the SDK
+- All methods on the client object
+- Detailed stack traces for any errors
 
-## 下一步
+## Next Steps
 
-一旦所有测试通过，你可以：
+Once all tests pass, you can:
 
-1. **配置 API 密钥**
-   - 设置 Anthropic API 密钥
-   - 测试实际的 AI 提示
+1. **Configure the API Key**
+   - Set up the Anthropic API key
+   - Test actual AI prompts
 
-2. **实现完整功能**
-   - 创建聊天界面
-   - 添加会话管理
-   - 集成编辑器命令
+2. **Implement Full Features**
+   - Create the chat interface
+   - Add session management
+   - Integrate editor commands
 
-3. **参考文档**
-   - `ARCHITECTURE.md` - 技术架构
-   - `ROADMAP.md` - 开发路线图
-   - `OBSIDIAN_BEST_PRACTICES.md` - 开发规范
+3. **Reference Documentation**
+   - `ARCHITECTURE.md` - Technical architecture
+   - `ROADMAP.md` - Development roadmap
+   - `OBSIDIAN_BEST_PRACTICES.md` - Development guidelines
 
-## 项目文件
+## Project Files
 
-- `src/main.ts` - 插件主类
-- `src/opencode-test-simple.ts` - 测试类
-- `src/settings.ts` - 设置管理
-- `manifest.json` - 插件清单
-- `main.js` - 构建输出
+- `src/main.ts` - Plugin main class
+- `src/opencode-test-simple.ts` - Test class
+- `src/settings.ts` - Settings management
+- `manifest.json` - Plugin manifest
+- `main.js` - Build output
 
-## 技术栈
+## Tech Stack
 
-- **Obsidian Plugin API** - 插件框架
-- **OpenCode SDK** - AI Agent 服务
-- **TypeScript** - 开发语言
-- **esbuild** - 构建工具
+- **Obsidian Plugin API** - Plugin framework
+- **OpenCode SDK** - AI Agent service
+- **TypeScript** - Development language
+- **esbuild** - Build tool
 
-## 需要帮助？
+## Need Help?
 
-- 查看 `MVP_README.md` 了解更多详情
-- 查看 `CLAUDE.md` 了解开发指南
-- 参考 `/Users/jiachengkun/opensource/infio-copilot` 的实现
+- See `MVP_README.md` for more details
+- See `CLAUDE.md` for development guidelines
+- Reference the implementation at `/Users/jiachengkun/opensource/infio-copilot`
 
 ---
 
-**状态**: ✅ 构建成功，准备测试
-**版本**: 0.1.0 MVP
-**最后更新**: 2026-02-13
+**Status**: ✅ Build successful, ready for testing
+**Version**: 0.1.0 MVP
+**Last Updated**: 2026-02-13

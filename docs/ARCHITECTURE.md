@@ -1,8 +1,8 @@
-# OnyxMind 技术架构设计
+# OnyxMind Technical Architecture Design
 
-## 1. 架构概述
+## 1. Architecture Overview
 
-### 1.1 整体架构
+### 1.1 Overall Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -32,74 +32,74 @@
                     └──────────────────┘
 ```
 
-### 1.2 设计原则
+### 1.2 Design Principles
 
-- **职责分离**：插件仅负责 UI 和请求转发，所有业务逻辑由 OpenCode Agent 处理
-- **最小侵入**：不修改 Obsidian 核心功能，通过 API 集成
-- **异步优先**：所有网络请求和文件操作异步执行
-- **错误容错**：完善的错误处理和用户提示
+- **Separation of concerns**: The plugin is responsible only for UI and request forwarding; all business logic is handled by the OpenCode Agent
+- **Minimal intrusion**: Does not modify Obsidian core functionality; integrates via API
+- **Async-first**: All network requests and file operations are executed asynchronously
+- **Error resilience**: Comprehensive error handling and user feedback
 
-## 2. 技术栈
+## 2. Technology Stack
 
-### 2.1 核心依赖
+### 2.1 Core Dependencies
 
-- **Obsidian API**：插件基础框架
-- **@opencode-ai/sdk**：OpenCode 客户端 SDK
-- **TypeScript**：类型安全的开发语言
-- **esbuild**：快速构建工具
+- **Obsidian API**: Plugin base framework
+- **@opencode-ai/sdk**: OpenCode client SDK
+- **TypeScript**: Type-safe development language
+- **esbuild**: Fast build tool
 
-### 2.2 可选依赖
+### 2.2 Optional Dependencies
 
-- **marked**：Markdown 渲染（如需自定义渲染）
-- **highlight.js**：代码高亮
-- **date-fns**：时间处理
+- **marked**: Markdown rendering (for custom rendering if needed)
+- **highlight.js**: Code highlighting
+- **date-fns**: Date and time utilities
 
-## 3. 模块设计
+## 3. Module Design
 
-### 3.1 插件主类 (OnyxMindPlugin)
+### 3.1 Plugin Main Class (OnyxMindPlugin)
 
-**职责**：插件生命周期管理和模块协调
+**Responsibility**: Plugin lifecycle management and module coordination
 
 ```typescript
 export default class OnyxMindPlugin extends Plugin {
   settings: OnyxMindSettings;
   opencodeService: OpencodeService;
   sessionManager: SessionManager;
-  // ⚠️ 不要存储视图引用，会导致内存泄漏
+  // ⚠️ Do not store view references here — causes memory leaks
 
   async onload(): Promise<void>;
   async onunload(): Promise<void>;
   async loadSettings(): Promise<void>;
   async saveSettings(): Promise<void>;
 
-  // 按需获取视图
+  // Get view on demand
   getChatView(): ChatView | null;
   async activateView(): Promise<void>;
 }
 ```
 
-**关键方法**：
+**Key methods**:
 
-- `onload()`: 初始化服务、注册命令和视图、使用 registerEvent/addCommand 自动清理
-- `onunload()`: 自动清理（不需要手动 detach leaves）
-- `loadSettings()`: 加载用户配置
-- `saveSettings()`: 保存用户配置
-- `getChatView()`: 按需获取视图实例（不存储引用）
-- `activateView()`: 激活或创建聊天视图
+- `onload()`: Initialize services, register commands and views, use registerEvent/addCommand for automatic cleanup
+- `onunload()`: Automatic cleanup (no need to manually detach leaves)
+- `loadSettings()`: Load user configuration
+- `saveSettings()`: Save user configuration
+- `getChatView()`: Get view instance on demand (do not store reference)
+- `activateView()`: Activate or create the chat view
 
-**Obsidian 最佳实践**：
+**Obsidian best practices**:
 
-- ✅ 使用 `registerEvent()` 注册事件监听器
-- ✅ 使用 `addCommand()` 注册命令
-- ✅ 使用 `registerView()` 注册自定义视图
-- ✅ 使用 `registerDomEvent()` 注册 DOM 事件
-- ✅ 使用 `registerInterval()` 注册定时器
-- ❌ 不要存储视图引用在插件属性中
-- ❌ 不要在 onunload 中手动 detach leaves
+- ✅ Use `registerEvent()` to register event listeners
+- ✅ Use `addCommand()` to register commands
+- ✅ Use `registerView()` to register custom views
+- ✅ Use `registerDomEvent()` to register DOM events
+- ✅ Use `registerInterval()` to register timers
+- ❌ Do not store view references in plugin properties
+- ❌ Do not manually detach leaves in onunload
 
-### 3.2 OpenCode 客户端服务 (OpencodeService)
+### 3.2 OpenCode Client Service (OpencodeService)
 
-**职责**：封装 OpenCode SDK，提供统一的 API 调用接口
+**Responsibility**: Wraps the OpenCode SDK and provides a unified API call interface
 
 ```typescript
 class OpencodeService {
@@ -119,16 +119,16 @@ class OpencodeService {
 }
 ```
 
-**核心功能**：
+**Core functionality**:
 
-- 管理 OpenCode 客户端连接
-- 处理认证和配置
-- 提供流式响应支持
-- 错误处理和重试逻辑
+- Manage OpenCode client connections
+- Handle authentication and configuration
+- Provide streaming response support
+- Error handling and retry logic
 
-### 3.3 会话管理器 (SessionManager)
+### 3.3 Session Manager (SessionManager)
 
-**职责**：管理对话会话的生命周期
+**Responsibility**: Manage the lifecycle of conversation sessions
 
 ```typescript
 class SessionManager {
@@ -152,9 +152,9 @@ interface Session {
 }
 ```
 
-### 3.4 聊天视图 (ChatView)
+### 3.4 Chat View (ChatView)
 
-**职责**：渲染对话界面，处理用户交互
+**Responsibility**: Render the conversation interface and handle user interactions
 
 ```typescript
 export const VIEW_TYPE_CHAT = "onyxmind-chat-view";
@@ -195,7 +195,7 @@ class ChatView extends ItemView {
 }
 ```
 
-**UI 组件结构**：
+**UI component structure**:
 
 ```
 ChatView
@@ -207,29 +207,29 @@ ChatView
 │   ├── UserMessage
 │   ├── AssistantMessage
 │   │   ├── Content (Markdown)
-│   │   ├── FileOperations (可展开)
+│   │   ├── FileOperations (expandable)
 │   │   └── Actions (Copy, Regenerate)
 │   └── ThinkingIndicator
 └── InputArea
-    ├── TextArea (自动扩展)
-    ├── AttachButton (未来功能)
+    ├── TextArea (auto-expand)
+    ├── AttachButton (future feature)
     └── SendButton
 ```
 
-**Obsidian 最佳实践**：
+**Obsidian best practices**:
 
-- ✅ 使用 Obsidian DOM 辅助方法（createDiv, createSpan, createEl）
-- ✅ 使用 MarkdownRenderer.renderMarkdown() 渲染 Markdown
-- ✅ 不要将 plugin 作为 component 传递给 MarkdownRenderer
-- ✅ 所有文本使用 sentence case
-- ✅ 使用 CSS 变量而非硬编码样式
-- ✅ 确保键盘可访问性（所有交互元素）
-- ✅ 为图标按钮添加 aria-label
-- ✅ 使用 :focus-visible 定义焦点样式
+- ✅ Use Obsidian DOM helper methods (createDiv, createSpan, createEl)
+- ✅ Use MarkdownRenderer.renderMarkdown() to render Markdown
+- ✅ Do not pass plugin as a component to MarkdownRenderer
+- ✅ All text uses sentence case
+- ✅ Use CSS variables instead of hardcoded styles
+- ✅ Ensure keyboard accessibility (all interactive elements)
+- ✅ Add aria-label to icon buttons
+- ✅ Use :focus-visible to define focus styles
 
-### 3.5 命令管理器 (CommandManager)
+### 3.5 Command Manager (CommandManager)
 
-**职责**：注册和管理 Obsidian 命令
+**Responsibility**: Register and manage Obsidian commands
 
 ```typescript
 class CommandManager {
@@ -243,25 +243,25 @@ class CommandManager {
 }
 ```
 
-**命令列表**：
+**Command list**:
 
-- `open-chat`: Open chat // ✅ sentence case，不包含 "command"
+- `open-chat`: Open chat // ✅ sentence case, does not include "command"
 - `ask-about-note`: Ask about current note
 - `generate-content`: Generate content
 - `improve-writing`: Improve writing
 - `summarize`: Summarize note
 - `explain-selection`: Explain selected text
 
-**Obsidian 最佳实践**：
+**Obsidian best practices**:
 
-- ✅ 命令 ID 不包含插件 ID 前缀（Obsidian 自动添加命名空间）
-- ✅ 命令名称使用 sentence case
-- ✅ 不包含 "command" 字样
-- ❌ 不设置默认快捷键（避免冲突）
+- ✅ Command IDs do not include the plugin ID prefix (Obsidian automatically namespaces them)
+- ✅ Command names use sentence case
+- ✅ Do not include the word "command"
+- ❌ Do not set default keyboard shortcuts (to avoid conflicts)
 
-### 3.6 设置管理 (SettingsTab)
+### 3.6 Settings Management (SettingsTab)
 
-**职责**：提供配置界面
+**Responsibility**: Provide the configuration interface
 
 ```typescript
 class OnyxMindSettingTab extends PluginSettingTab {
@@ -276,41 +276,41 @@ class OnyxMindSettingTab extends PluginSettingTab {
 }
 
 interface OnyxMindSettings {
-  // OpenCode 连接
+  // OpenCode connection
   opencodeHost: string;
   opencodePort: number;
   apiKey: string;
   modelId: string;
 
-  // 行为设置
+  // Behavior settings
   defaultSearchScope: "current-folder" | "vault";
   autoSave: boolean;
   confirmFileOperations: boolean;
   maxHistoryMessages: number;
 
-  // UI 设置
+  // UI settings
   sidebarPosition: "left" | "right";
   fontSize: number;
   showThinkingProcess: boolean;
 
-  // 高级设置
+  // Advanced settings
   timeout: number;
   maxRetries: number;
   streamResponse: boolean;
 }
 ```
 
-**Obsidian 最佳实践**：
+**Obsidian best practices**:
 
-- ✅ 使用 `.setHeading()` 创建标题（不手动创建 HTML）
-- ✅ 标题使用 sentence case
-- ✅ 标题不包含 "General"、"settings" 或插件名称
-- ✅ 所有设置项名称和描述使用 sentence case
-- ✅ 描述以标点符号结尾
+- ✅ Use `.setHeading()` to create headings (do not manually create HTML)
+- ✅ Headings use sentence case
+- ✅ Headings do not include "General", "settings", or the plugin name
+- ✅ All setting names and descriptions use sentence case
+- ✅ Descriptions end with punctuation
 
-## 4. 数据流设计
+## 4. Data Flow Design
 
-### 4.1 用户提问流程
+### 4.1 User Query Flow
 
 ```
 User Input
@@ -332,7 +332,7 @@ Render Message (Markdown + File Ops)
 Update Session History
 ```
 
-### 4.2 文件操作流程
+### 4.2 File Operation Flow
 
 ```
 AI Agent Decision (in OpenCode)
@@ -350,7 +350,7 @@ Obsidian Vault Updated
 User sees result in UI
 ```
 
-### 4.3 会话管理流程
+### 4.3 Session Management Flow
 
 ```
 Create Session
@@ -370,11 +370,11 @@ Auto-save Messages
 Close/Delete Session (optional)
 ```
 
-## 5. 关键技术实现
+## 5. Key Technical Implementations
 
-### 5.0 Obsidian 集成要点
+### 5.0 Obsidian Integration Points
 
-#### 5.0.1 插件初始化模式
+#### 5.0.1 Plugin Initialization Pattern
 
 ```typescript
 export default class OnyxMindPlugin extends Plugin {
@@ -385,41 +385,41 @@ export default class OnyxMindPlugin extends Plugin {
   async onload() {
     await this.loadSettings();
 
-    // 初始化服务
+    // Initialize services
     this.opencodeService = new OpencodeService(this.app, this.settings);
     this.sessionManager = new SessionManager(this.opencodeService);
 
-    // 注册视图（不存储引用）
+    // Register view (do not store reference)
     this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));
 
-    // 添加 Ribbon 图标
+    // Add Ribbon icon
     this.addRibbonIcon("message-square", "OnyxMind", () => {
       this.activateView();
     });
 
-    // 注册命令（自动清理）
+    // Register commands (automatic cleanup)
     this.addCommand({
       id: "open-chat",
       name: "Open chat", // sentence case
       callback: () => this.activateView(),
     });
 
-    // 注册事件（自动清理）
+    // Register events (automatic cleanup)
     this.registerEvent(
       this.app.workspace.on("file-open", (file) => {
-        // 处理文件打开事件
+        // Handle file open event
       }),
     );
 
-    // 添加设置页面
+    // Add settings tab
     this.addSettingTab(new OnyxMindSettingTab(this.app, this));
   }
 
   onunload() {
-    // Obsidian 自动清理，不需要手动操作
+    // Obsidian handles cleanup automatically, no manual action needed
   }
 
-  // 按需获取视图
+  // Get view on demand
   getChatView(): ChatView | null {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CHAT);
     return leaves.length > 0 ? (leaves[0].view as ChatView) : null;
@@ -439,10 +439,10 @@ export default class OnyxMindPlugin extends Plugin {
 }
 ```
 
-#### 5.0.2 类型安全的文件操作
+#### 5.0.2 Type-Safe File Operations
 
 ```typescript
-// ✅ 正确 - 使用 instanceof
+// ✅ Correct - use instanceof
 async getFileContent(path: string): Promise<string | null> {
     const file = this.app.vault.getAbstractFileByPath(path);
     if (file instanceof TFile) {
@@ -451,7 +451,7 @@ async getFileContent(path: string): Promise<string | null> {
     return null;
 }
 
-// ✅ 正确 - 使用 Editor API 编辑活动文件
+// ✅ Correct - use Editor API to edit the active file
 async insertAtCursor(text: string) {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (view) {
@@ -459,18 +459,18 @@ async insertAtCursor(text: string) {
     }
 }
 
-// ✅ 正确 - 使用 Vault.process() 后台修改
+// ✅ Correct - use Vault.process() for background modification
 async updateFile(file: TFile, updater: (content: string) => string) {
     await this.app.vault.process(file, updater);
 }
 ```
 
-#### 5.0.3 使用 requestUrl 而非 fetch
+#### 5.0.3 Use requestUrl Instead of fetch
 
 ```typescript
 import { requestUrl } from 'obsidian';
 
-// ✅ 正确 - 绕过 CORS 限制
+// ✅ Correct - bypass CORS restrictions
 async makeRequest(url: string, data: any) {
     const response = await requestUrl({
         url: url,
@@ -482,22 +482,22 @@ async makeRequest(url: string, data: any) {
 }
 ```
 
-#### 5.0.4 平台检测
+#### 5.0.4 Platform Detection
 
 ```typescript
 import { Platform } from "obsidian";
 
-// ✅ 正确 - 使用 Platform API
+// ✅ Correct - use Platform API
 if (Platform.isMobile) {
-  // 移动端处理
+  // Handle mobile platform
 }
 
 if (Platform.isIosApp) {
-  // iOS 特殊处理（避免不兼容的正则表达式）
+  // iOS-specific handling (avoid incompatible regular expressions)
 }
 ```
 
-### 5.1 流式响应处理
+### 5.1 Streaming Response Handling
 
 ```typescript
 async handleStreamResponse(stream: AsyncIterator<PromptResponse>): Promise<void> {
@@ -509,15 +509,15 @@ async handleStreamResponse(stream: AsyncIterator<PromptResponse>): Promise<void>
     for await (const chunk of stream) {
         if (chunk.type === 'content') {
             fullContent += chunk.text;
-            // ⚠️ 不要将 plugin 作为 component 传递
+            // ⚠️ Do not pass plugin as a component
             MarkdownRenderer.renderMarkdown(
                 fullContent,
                 contentEl,
                 '',
-                null  // 传递 null 而非 this.plugin
+                null  // Pass null instead of this.plugin
             );
         } else if (chunk.type === 'file_operation') {
-            // 显示文件操作状态
+            // Show file operation status
             this.showFileOperation(messageEl, chunk.operation);
         } else if (chunk.type === 'error') {
             this.showError(messageEl, chunk.error);
@@ -528,17 +528,17 @@ async handleStreamResponse(stream: AsyncIterator<PromptResponse>): Promise<void>
 }
 ```
 
-### 5.2 Vault 上下文注入
+### 5.2 Vault Context Injection
 
 ```typescript
 async injectVaultContext(sessionId: string): Promise<void> {
     const vault = this.plugin.app.vault;
     const files = vault.getMarkdownFiles();
 
-    // 构建文件树结构
+    // Build file tree structure
     const fileTree = this.buildFileTree(files);
 
-    // 使用 noReply 注入上下文
+    // Inject context using noReply
     await this.opencodeService.sendPrompt(sessionId, {
         parts: [{
             type: 'text',
@@ -549,7 +549,7 @@ async injectVaultContext(sessionId: string): Promise<void> {
 }
 ```
 
-### 5.3 错误处理策略
+### 5.3 Error Handling Strategy
 
 ```typescript
 async sendPromptWithRetry(
@@ -566,15 +566,15 @@ async sendPromptWithRetry(
             lastError = error;
 
             if (error.code === 'NETWORK_ERROR') {
-                // 网络错误，等待后重试
+                // Network error — wait and retry
                 await this.delay(1000 * Math.pow(2, i));
                 continue;
             } else if (error.code === 'AUTH_ERROR') {
-                // 认证错误，提示用户重新配置
+                // Authentication error — prompt user to reconfigure
                 new Notice('OpenCode authentication failed. Please check your API key.');
                 throw error;
             } else {
-                // 其他错误，直接抛出
+                // Other errors — rethrow immediately
                 throw error;
             }
         }
@@ -584,102 +584,102 @@ async sendPromptWithRetry(
 }
 ```
 
-## 6. 性能优化
+## 6. Performance Optimization
 
-### 6.1 懒加载
+### 6.1 Lazy Loading
 
-- 聊天视图按需创建
-- 会话历史分页加载
-- 大文件内容分块传输
+- Chat view created on demand
+- Session history loaded with pagination
+- Large file content transferred in chunks
 
-### 6.2 缓存策略
+### 6.2 Caching Strategy
 
-- 会话元数据内存缓存
-- 文件树结构缓存（监听 vault 变化）
-- OpenCode 客户端连接复用
+- Session metadata cached in memory
+- File tree structure cached (listening for vault changes)
+- OpenCode client connection reused
 
-### 6.3 UI 优化
+### 6.3 UI Optimization
 
-- 虚拟滚动（长对话历史）
-- 防抖输入处理
-- 异步渲染 Markdown
+- Virtual scrolling (for long conversation histories)
+- Debounced input handling
+- Asynchronous Markdown rendering
 
-## 7. 安全考虑
+## 7. Security Considerations
 
-### 7.1 数据安全
+### 7.1 Data Security
 
-- API 密钥加密存储（使用 Obsidian 的数据加密）
-- 敏感信息不记录日志
-- 支持本地 OpenCode 部署
+- API key encrypted storage (using Obsidian's data encryption)
+- Sensitive information not logged
+- Supports local OpenCode deployment
 
-### 7.2 文件操作安全
+### 7.2 File Operation Security
 
-- 可选的操作确认机制
-- 文件操作日志记录
-- 支持操作撤销（利用 Obsidian 的历史记录）
+- Optional operation confirmation mechanism
+- File operation audit logging
+- Supports operation undo (using Obsidian's history)
 
-### 7.3 网络安全
+### 7.3 Network Security
 
-- HTTPS 连接
-- 请求超时控制
-- 防止 XSS 攻击（Markdown 渲染）
+- HTTPS connections
+- Request timeout control
+- XSS attack prevention (Markdown rendering)
 
-## 8. 测试策略
+## 8. Testing Strategy
 
-### 8.1 单元测试
+### 8.1 Unit Testing
 
-- OpencodeService 方法测试
-- SessionManager 逻辑测试
-- 工具函数测试
+- OpencodeService method tests
+- SessionManager logic tests
+- Utility function tests
 
-### 8.2 集成测试
+### 8.2 Integration Testing
 
-- OpenCode SDK 集成测试
-- Obsidian API 集成测试
-- 端到端流程测试
+- OpenCode SDK integration tests
+- Obsidian API integration tests
+- End-to-end flow tests
 
-### 8.3 手动测试
+### 8.3 Manual Testing
 
-- 多平台兼容性测试
-- 性能压力测试
-- 用户体验测试
+- Cross-platform compatibility testing
+- Performance stress testing
+- User experience testing
 
-## 9. 部署和发布
+## 9. Deployment and Release
 
-### 9.1 构建流程
+### 9.1 Build Process
 
 ```bash
 npm run build
-# 生成 main.js, manifest.json, styles.css
+# Generates main.js, manifest.json, styles.css
 ```
 
-### 9.2 发布检查清单
+### 9.2 Release Checklist
 
-- [ ] 版本号更新
-- [ ] CHANGELOG 更新
-- [ ] 文档完善
-- [ ] 测试通过
-- [ ] 代码审查
-- [ ] 社区插件提交
+- [ ] Version number updated
+- [ ] CHANGELOG updated
+- [ ] Documentation complete
+- [ ] Tests passing
+- [ ] Code review done
+- [ ] Community plugin submission
 
-### 9.3 版本规划
+### 9.3 Version Roadmap
 
-- **v0.1.0**: MVP 版本（基础对话功能）
-- **v0.2.0**: 增强版（流式响应、文件操作可视化）
-- **v0.3.0**: 完整版（所有 P1 功能）
-- **v1.0.0**: 稳定版（经过充分测试）
+- **v0.1.0**: MVP release (basic conversation features)
+- **v0.2.0**: Enhanced release (streaming responses, file operation visualization)
+- **v0.3.0**: Full release (all P1 features)
+- **v1.0.0**: Stable release (thoroughly tested)
 
-## 10. 未来扩展
+## 10. Future Extensions
 
-### 10.1 短期规划
+### 10.1 Short-term Plans
 
-- 支持自定义 Agent 配置
-- 多语言界面
-- 插件间协作（与其他 Obsidian 插件集成）
+- Support for custom Agent configuration
+- Multi-language interface
+- Inter-plugin collaboration (integration with other Obsidian plugins)
 
-### 10.2 长期规划
+### 10.2 Long-term Plans
 
-- 本地 LLM 支持
-- 协作功能（多用户）
-- 高级分析和洞察
-- 移动端原生体验优化
+- Local LLM support
+- Collaboration features (multi-user)
+- Advanced analytics and insights
+- Native mobile experience optimization

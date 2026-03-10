@@ -28,9 +28,9 @@ export function WelcomeCards(props: WelcomeCardsProps) {
   return (
     <div className="onyxmind-welcome-container">
       <div className="onyxmind-welcome-header">
-        <div className="onyxmind-welcome-title">欢迎使用 OnyxMind</div>
+        <div className="onyxmind-welcome-title">Welcome to OnyxMind</div>
         <div className="onyxmind-welcome-subtitle">
-          选择一个快速开始，或直接输入问题开始对话
+          Choose a quick start option or type a question to begin
         </div>
       </div>
 
@@ -59,7 +59,7 @@ export function WelcomeCards(props: WelcomeCardsProps) {
       </div>
 
       <div className="onyxmind-welcome-footer">
-        输入 <code>/</code> 可选择可用命令
+        Type <code>/</code> to browse available commands
       </div>
     </div>
   );
