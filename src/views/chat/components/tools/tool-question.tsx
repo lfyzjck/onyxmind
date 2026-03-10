@@ -60,7 +60,7 @@ export function ToolQuestion({ tool }: ToolItemProps) {
               icon="circle-slash"
               className="onyxmind-question-readonly-notice-icon"
             />
-            <span>会话中断，问题未被回答</span>
+            <span>Session interrupted, question left unanswered</span>
           </div>
         </div>
       )}

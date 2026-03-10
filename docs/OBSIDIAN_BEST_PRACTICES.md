@@ -1,18 +1,18 @@
-# OnyxMind Obsidian 插件开发最佳实践
+# OnyxMind Obsidian Plugin Development Best Practices
 
-本文档基于 Obsidian 官方 ESLint 插件规则和社区最佳实践，为 OnyxMind 插件开发提供具体指导。
+This document is based on the official Obsidian ESLint plugin rules and community best practices, providing concrete guidance for OnyxMind plugin development.
 
-## 1. 命名规范
+## 1. Naming Conventions
 
-### 1.1 插件标识和名称
+### 1.1 Plugin ID and Name
 
-**manifest.json 配置**:
+**manifest.json configuration**:
 
 ```json
 {
-  "id": "onyxmind", // ✅ 不包含 "obsidian"，不以 "plugin" 结尾
-  "name": "OnyxMind", // ✅ 不包含 "Obsidian"，不以 "Plugin" 结尾
-  "description": "AI assistant for note querying, content generation, and iterative writing.", // ✅ 以标点结尾，不包含 "Obsidian" 或 "This plugin"
+  "id": "onyxmind", // ✅ Does not contain "obsidian", does not end with "plugin"
+  "name": "OnyxMind", // ✅ Does not contain "Obsidian", does not end with "Plugin"
+  "description": "AI assistant for note querying, content generation, and iterative writing.", // ✅ Ends with punctuation, does not contain "Obsidian" or "This plugin"
   "version": "0.1.0",
   "minAppVersion": "0.15.0",
   "author": "Your Name",
@@ -20,100 +20,100 @@
 }
 ```
 
-### 1.2 命令命名
+### 1.2 Command Naming
 
-**规则**:
+**Rules**:
 
-- 使用 sentence case（句子大小写）
-- 不包含 "command" 字样
-- 不重复插件 ID
+- Use sentence case
+- Do not include the word "command"
+- Do not repeat the plugin ID
 
 ```typescript
-// ✅ 正确
+// ✅ Correct
 this.addCommand({
-  id: "open-chat", // 不包含 "onyxmind-" 前缀
-  name: "Open chat", // sentence case，不包含 "command"
+  id: "open-chat", // Does not include the "onyxmind-" prefix
+  name: "Open chat", // Sentence case, does not include "command"
   callback: () => this.activateView(),
 });
 
-// ❌ 错误
+// ❌ Incorrect
 this.addCommand({
-  id: "onyxmind-open-chat-command", // 冗余
-  name: "Open Chat Command", // Title Case，包含 "Command"
+  id: "onyxmind-open-chat-command", // Redundant
+  name: "Open Chat Command", // Title Case, contains "Command"
   callback: () => this.activateView(),
 });
 ```
 
-### 1.3 UI 文本规范
+### 1.3 UI Text Conventions
 
-所有 UI 文本使用 sentence case:
+All UI text uses sentence case:
 
 ```typescript
-// ✅ 正确
+// ✅ Correct
 setting.setName("API key");
 setting.setDesc("Enter your OpenCode API key.");
 button.setText("Clear history");
 
-// ❌ 错误
+// ❌ Incorrect
 setting.setName("API Key"); // Title Case
 setting.setDesc("Enter Your OpenCode API Key");
 button.setText("Clear History");
 ```
 
-## 2. 内存管理和生命周期
+## 2. Memory Management and Lifecycle
 
-### 2.1 使用注册方法自动清理
+### 2.1 Use Registration Methods for Automatic Cleanup
 
-**必须使用的注册方法**:
+**Required registration methods**:
 
 ```typescript
 export default class OnyxMindPlugin extends Plugin {
   async onload() {
-    // ✅ 使用 registerEvent 自动清理
+    // ✅ Use registerEvent for automatic cleanup
     this.registerEvent(
       this.app.workspace.on("file-open", (file) => {
         console.log("File opened:", file?.path);
       }),
     );
 
-    // ✅ 使用 addCommand 自动清理
+    // ✅ Use addCommand for automatic cleanup
     this.addCommand({
       id: "open-chat",
       name: "Open chat",
       callback: () => this.activateView(),
     });
 
-    // ✅ 使用 registerDomEvent 自动清理
+    // ✅ Use registerDomEvent for automatic cleanup
     this.registerDomEvent(document, "click", (evt) => {
-      // 处理点击
+      // Handle click
     });
 
-    // ✅ 使用 registerInterval 自动清理
+    // ✅ Use registerInterval for automatic cleanup
     this.registerInterval(
       window.setInterval(() => this.checkConnection(), 60000),
     );
   }
 
   onunload() {
-    // ✅ 不需要手动清理，Obsidian 会自动处理
-    // ❌ 不要在这里 detach leaves
+    // ✅ No manual cleanup needed; Obsidian handles it automatically
+    // ❌ Do not detach leaves here
   }
 }
 ```
 
-### 2.2 避免存储视图引用
+### 2.2 Avoid Storing View References
 
 ```typescript
-// ❌ 错误 - 会导致内存泄漏
+// ❌ Incorrect - causes memory leaks
 export default class OnyxMindPlugin extends Plugin {
-  chatView: ChatView; // 不要存储视图引用
+  chatView: ChatView; // Do not store view references
 
   async onload() {
-    this.chatView = new ChatView(this); // 错误
+    this.chatView = new ChatView(this); // Incorrect
   }
 }
 
-// ✅ 正确 - 按需获取视图
+// ✅ Correct - retrieve the view on demand
 export default class OnyxMindPlugin extends Plugin {
   async onload() {
     this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));
@@ -129,46 +129,46 @@ export default class OnyxMindPlugin extends Plugin {
 }
 ```
 
-### 2.3 不要将插件作为组件传递
+### 2.3 Do Not Pass the Plugin as a Component
 
 ```typescript
-// ❌ 错误
+// ❌ Incorrect
 MarkdownRenderer.renderMarkdown(
   content,
   containerEl,
   "",
-  this, // 不要传递插件实例
+  this, // Do not pass the plugin instance
 );
 
-// ✅ 正确
+// ✅ Correct
 MarkdownRenderer.renderMarkdown(
   content,
   containerEl,
   "",
-  null, // 或者传递一个专门的 component 对象
+  null, // Or pass a dedicated component object
 );
 ```
 
-## 3. 类型安全
+## 3. Type Safety
 
-### 3.1 使用 instanceof 而非类型转换
+### 3.1 Use instanceof Instead of Type Casting
 
 ```typescript
-// ✅ 正确
+// ✅ Correct
 const file = this.app.vault.getAbstractFileByPath(path);
 if (file instanceof TFile) {
   const content = await this.app.vault.read(file);
 }
 
-// ❌ 错误
+// ❌ Incorrect
 const file = this.app.vault.getAbstractFileByPath(path) as TFile;
-const content = await this.app.vault.read(file); // 可能崩溃
+const content = await this.app.vault.read(file); // May crash
 ```
 
-### 3.2 避免使用 any
+### 3.2 Avoid Using any
 
 ```typescript
-// ✅ 正确
+// ✅ Correct
 interface OpencodeResponse {
   type: 'content' | 'tool_use' | 'error';
   text?: string;
@@ -176,34 +176,34 @@ interface OpencodeResponse {
 }
 
 async handleResponse(response: OpencodeResponse) {
-  // 类型安全
+  // Type-safe
 }
 
-// ❌ 错误
+// ❌ Incorrect
 async handleResponse(response: any) {
-  // 失去类型检查
+  // Loses type checking
 }
 ```
 
-### 3.3 使用 const 和 let
+### 3.3 Use const and let
 
 ```typescript
-// ✅ 正确
+// ✅ Correct
 const API_ENDPOINT = "https://api.opencode.ai";
 let sessionId: string | null = null;
 
-// ❌ 错误
+// ❌ Incorrect
 var API_ENDPOINT = "https://api.opencode.ai";
 var sessionId;
 ```
 
-## 4. 文件和 Vault 操作
+## 4. File and Vault Operations
 
-### 4.1 使用正确的 API
+### 4.1 Use the Correct API
 
 ```typescript
 class OnyxMindPlugin extends Plugin {
-  // ✅ 正确 - 使用 Editor API 编辑活动文件
+  // ✅ Correct - use the Editor API to edit the active file
   async insertAtCursor(text: string) {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (view) {
@@ -212,7 +212,7 @@ class OnyxMindPlugin extends Plugin {
     }
   }
 
-  // ✅ 正确 - 使用 Vault.process() 后台修改文件
+  // ✅ Correct - use Vault.process() to modify files in the background
   async updateFileInBackground(
     file: TFile,
     updater: (content: string) => string,
@@ -220,48 +220,48 @@ class OnyxMindPlugin extends Plugin {
     await this.app.vault.process(file, updater);
   }
 
-  // ❌ 错误 - 不要用 Vault.modify() 编辑活动文件
+  // ❌ Incorrect - do not use Vault.modify() to edit the active file
   async insertAtCursorWrong(text: string) {
     const file = this.app.workspace.getActiveFile();
     if (file) {
       const content = await this.app.vault.read(file);
-      await this.app.vault.modify(file, content + text); // 会丢失光标位置
+      await this.app.vault.modify(file, content + text); // Will lose cursor position
     }
   }
 }
 ```
 
-### 4.2 路径处理
+### 4.2 Path Handling
 
 ```typescript
-// ✅ 正确 - 使用 normalizePath
+// ✅ Correct - use normalizePath
 import { normalizePath } from "obsidian";
 
 const userPath = settings.notesFolder;
 const normalizedPath = normalizePath(userPath);
 const file = this.app.vault.getAbstractFileByPath(normalizedPath);
 
-// ✅ 正确 - 使用 vault.configDir 而非硬编码
+// ✅ Correct - use vault.configDir instead of hardcoding
 const configPath = `${this.app.vault.configDir}/onyxmind-data.json`;
 
-// ❌ 错误 - 硬编码 .obsidian
+// ❌ Incorrect - hardcoded .obsidian
 const configPath = ".obsidian/onyxmind-data.json";
 ```
 
-### 4.3 文件查找优化
+### 4.3 File Lookup Optimization
 
 ```typescript
-// ✅ 正确 - 直接查找
+// ✅ Correct - direct lookup
 const file = this.app.vault.getAbstractFileByPath("path/to/file.md");
 
-// ❌ 错误 - 遍历整个 vault
+// ❌ Incorrect - iterating the entire vault
 const files = this.app.vault.getMarkdownFiles();
 const file = files.find((f) => f.path === "path/to/file.md");
 ```
 
-## 5. UI/UX 最佳实践
+## 5. UI/UX Best Practices
 
-### 5.1 设置页面
+### 5.1 Settings Page
 
 ```typescript
 class OnyxMindSettingTab extends PluginSettingTab {
@@ -269,11 +269,11 @@ class OnyxMindSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    // ✅ 正确 - 使用 setHeading()
-    new Setting(containerEl).setHeading().setName("Connection"); // sentence case，不包含 "settings"
+    // ✅ Correct - use setHeading()
+    new Setting(containerEl).setHeading().setName("Connection"); // Sentence case, does not include "settings"
 
     new Setting(containerEl)
-      .setName("API key") // sentence case
+      .setName("API key") // Sentence case
       .setDesc("Enter your OpenCode API key.")
       .addText((text) =>
         text
@@ -285,39 +285,39 @@ class OnyxMindSettingTab extends PluginSettingTab {
           }),
       );
 
-    // ❌ 错误 - 手动创建标题
+    // ❌ Incorrect - manually creating a heading
     containerEl.createEl("h2", { text: "Connection Settings" });
   }
 }
 ```
 
-### 5.2 不设置默认快捷键
+### 5.2 Do Not Set Default Hotkeys
 
 ```typescript
-// ✅ 正确 - 不设置 hotkeys
+// ✅ Correct - do not set hotkeys
 this.addCommand({
   id: "open-chat",
   name: "Open chat",
   callback: () => this.activateView(),
 });
 
-// ❌ 错误 - 设置默认快捷键可能冲突
+// ❌ Incorrect - setting default hotkeys may cause conflicts
 this.addCommand({
   id: "open-chat",
   name: "Open chat",
-  hotkeys: [{ modifiers: ["Mod"], key: "o" }], // 不要这样做
+  hotkeys: [{ modifiers: ["Mod"], key: "o" }], // Do not do this
   callback: () => this.activateView(),
 });
 ```
 
-## 6. CSS 样式
+## 6. CSS Styles
 
-### 6.1 使用 CSS 变量
+### 6.1 Use CSS Variables
 
 ```css
 /* styles.css */
 
-/* ✅ 正确 - 使用 Obsidian CSS 变量 */
+/* ✅ Correct - use Obsidian CSS variables */
 .onyxmind-chat-view {
   background-color: var(--background-primary);
   color: var(--text-normal);
@@ -347,47 +347,47 @@ this.addCommand({
   background-color: var(--interactive-hover);
 }
 
-/* ❌ 错误 - 硬编码颜色 */
+/* ❌ Incorrect - hardcoded colors */
 .onyxmind-chat-view {
   background-color: #ffffff;
   color: #000000;
 }
 ```
 
-### 6.2 作用域限定
+### 6.2 Scoped Selectors
 
 ```css
-/* ✅ 正确 - 限定到插件容器 */
+/* ✅ Correct - scoped to the plugin container */
 .onyxmind-chat-view .message {
   padding: 8px;
 }
 
-/* ❌ 错误 - 全局选择器 */
+/* ❌ Incorrect - global selector */
 .message {
   padding: 8px;
 }
 ```
 
-### 6.3 不使用内联样式
+### 6.3 Do Not Use Inline Styles
 
 ```typescript
-// ✅ 正确 - 使用 CSS 类
+// ✅ Correct - use CSS classes
 const button = containerEl.createEl("button", {
   cls: "onyxmind-button",
 });
 
-// ❌ 错误 - 内联样式
+// ❌ Incorrect - inline styles
 const button = containerEl.createEl("button");
 button.style.backgroundColor = "#007bff";
 button.style.color = "white";
 ```
 
-## 7. 无障碍访问（必需）
+## 7. Accessibility (Required)
 
-### 7.1 键盘导航
+### 7.1 Keyboard Navigation
 
 ```typescript
-// ✅ 正确 - 支持键盘操作
+// ✅ Correct - support keyboard interaction
 const button = containerEl.createEl("button", {
   cls: "onyxmind-icon-button",
   attr: {
@@ -405,25 +405,25 @@ button.addEventListener("keydown", (e) => {
 });
 ```
 
-### 7.2 焦点指示器
+### 7.2 Focus Indicators
 
 ```css
-/* ✅ 正确 - 使用 :focus-visible */
+/* ✅ Correct - use :focus-visible */
 .onyxmind-button:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 2px;
 }
 
-/* ❌ 错误 - 移除焦点指示器 */
+/* ❌ Incorrect - removes the focus indicator */
 .onyxmind-button:focus {
   outline: none;
 }
 ```
 
-### 7.3 触摸目标大小
+### 7.3 Touch Target Size
 
 ```css
-/* ✅ 正确 - 最小 44x44px */
+/* ✅ Correct - minimum 44x44px */
 .onyxmind-icon-button {
   min-width: 44px;
   min-height: 44px;
@@ -433,10 +433,10 @@ button.addEventListener("keydown", (e) => {
 }
 ```
 
-### 7.4 ARIA 标签
+### 7.4 ARIA Labels
 
 ```typescript
-// ✅ 正确 - 为图标按钮添加 ARIA 标签
+// ✅ Correct - add ARIA labels to icon buttons
 const closeButton = headerEl.createEl("button", {
   cls: "onyxmind-close-button",
   attr: {
@@ -446,40 +446,40 @@ const closeButton = headerEl.createEl("button", {
 });
 closeButton.innerHTML = "×";
 
-// ❌ 错误 - 没有 ARIA 标签的图标按钮
+// ❌ Incorrect - icon button without an ARIA label
 const closeButton = headerEl.createEl("button");
 closeButton.innerHTML = "×";
 ```
 
-## 8. 平台兼容性
+## 8. Platform Compatibility
 
-### 8.1 使用 Platform API
+### 8.1 Use the Platform API
 
 ```typescript
 import { Platform } from "obsidian";
 
-// ✅ 正确
+// ✅ Correct
 if (Platform.isMobile) {
-  // 移动端特定逻辑
+  // Mobile-specific logic
 }
 
 if (Platform.isIosApp) {
-  // iOS 特定逻辑
+  // iOS-specific logic
 }
 
-// ❌ 错误
+// ❌ Incorrect
 if (navigator.userAgent.includes("Mobile")) {
-  // 不可靠
+  // Unreliable
 }
 ```
 
-### 8.2 避免 iOS 不兼容特性
+### 8.2 Avoid iOS-Incompatible Features
 
 ```typescript
-// ❌ 错误 - iOS < 16.4 不支持 lookbehind
+// ❌ Incorrect - lookbehind not supported on iOS < 16.4
 const regex = /(?<=\[\[).*?(?=\]\])/g;
 
-// ✅ 正确 - 使用兼容的正则
+// ✅ Correct - use a compatible regex
 const regex = /\[\[(.*?)\]\]/g;
 const match = regex.exec(text);
 if (match) {
@@ -487,14 +487,14 @@ if (match) {
 }
 ```
 
-## 9. 网络请求
+## 9. Network Requests
 
-### 9.1 使用 requestUrl 而非 fetch
+### 9.1 Use requestUrl Instead of fetch
 
 ```typescript
 import { requestUrl } from 'obsidian';
 
-// ✅ 正确 - 绕过 CORS 限制
+// ✅ Correct - bypasses CORS restrictions
 async fetchData(url: string) {
   try {
     const response = await requestUrl({
@@ -511,33 +511,33 @@ async fetchData(url: string) {
   }
 }
 
-// ❌ 错误 - fetch 会受 CORS 限制
+// ❌ Incorrect - fetch is subject to CORS restrictions
 async fetchData(url: string) {
   const response = await fetch(url);
   return response.json();
 }
 ```
 
-## 10. 代码质量
+## 10. Code Quality
 
-### 10.1 使用 Obsidian DOM 辅助函数
+### 10.1 Use Obsidian DOM Helper Functions
 
 ```typescript
-// ✅ 正确
+// ✅ Correct
 const container = containerEl.createDiv({ cls: "onyxmind-container" });
 const title = container.createEl("h3", { text: "Chat History" });
 const button = container.createEl("button", { text: "Clear" });
 
-// ❌ 错误
+// ❌ Incorrect
 const container = document.createElement("div");
 container.className = "onyxmind-container";
 containerEl.appendChild(container);
 ```
 
-### 10.2 使用 async/await
+### 10.2 Use async/await
 
 ```typescript
-// ✅ 正确
+// ✅ Correct
 async loadData() {
   try {
     const data = await this.loadData();
@@ -547,7 +547,7 @@ async loadData() {
   }
 }
 
-// ❌ 错误
+// ❌ Incorrect
 loadData() {
   this.loadData()
     .then(data => {
@@ -559,22 +559,22 @@ loadData() {
 }
 ```
 
-### 10.3 避免 XSS 风险
+### 10.3 Avoid XSS Risks
 
 ```typescript
-// ✅ 正确 - 使用 setText 或 Markdown 渲染
+// ✅ Correct - use setText or Markdown rendering
 messageEl.setText(userInput);
-// 或
+// or
 MarkdownRenderer.renderMarkdown(userInput, messageEl, "", null);
 
-// ❌ 错误 - innerHTML 有 XSS 风险
+// ❌ Incorrect - innerHTML carries XSS risk
 messageEl.innerHTML = userInput;
 ```
 
-### 10.4 移除示例代码
+### 10.4 Remove Sample Code
 
 ```typescript
-// ❌ 错误 - 保留示例代码
+// ❌ Incorrect - leaving sample code in place
 export default class MyPlugin extends Plugin {
   // ...
 }
@@ -583,7 +583,7 @@ class SampleModal extends Modal {
   // ...
 }
 
-// ✅ 正确 - 使用实际的类名
+// ✅ Correct - use the actual class names
 export default class OnyxMindPlugin extends Plugin {
   // ...
 }
@@ -593,58 +593,58 @@ class ChatView extends ItemView {
 }
 ```
 
-## 11. 日志和调试
+## 11. Logging and Debugging
 
-### 11.1 生产环境日志
+### 11.1 Production Logging
 
 ```typescript
-// ✅ 正确 - 不在 onload/onunload 中使用 console.log
+// ✅ Correct - do not use console.log in onload/onunload
 async onload() {
   await this.loadSettings();
   this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));
-  // 不要 console.log
+  // No console.log
 }
 
-// ✅ 正确 - 错误日志可以保留
+// ✅ Correct - error logs are acceptable
 async sendRequest() {
   try {
     // ...
   } catch (error) {
-    console.error('Request failed:', error);  // 错误日志可以
+    console.error('Request failed:', error);  // Error logging is fine
     new Notice('Failed to send request');
   }
 }
 
-// ❌ 错误 - 污染控制台
+// ❌ Incorrect - pollutes the console
 async onload() {
-  console.log('Plugin loaded');  // 不要这样做
+  console.log('Plugin loaded');  // Do not do this
 }
 ```
 
-## 12. 测试清单
+## 12. Pre-release Checklist
 
-发布前必须检查:
+Must verify before publishing:
 
-- [ ] 所有命令和 UI 文本使用 sentence case
-- [ ] 没有默认快捷键
-- [ ] 使用 `registerEvent()` 等注册方法
-- [ ] 不存储视图引用
-- [ ] 使用 `instanceof` 进行类型检查
-- [ ] 所有样式使用 CSS 变量
-- [ ] 所有交互元素支持键盘操作
-- [ ] 所有图标按钮有 ARIA 标签
-- [ ] 焦点指示器清晰可见
-- [ ] 触摸目标至少 44x44px
-- [ ] 使用 `requestUrl()` 而非 `fetch()`
-- [ ] 使用 `Platform` API 检测平台
-- [ ] 没有 iOS 不兼容的正则表达式
-- [ ] 移除所有示例代码
-- [ ] manifest.json 符合命名规范
-- [ ] 在移动端测试（如果不是 desktop-only）
+- [ ] All commands and UI text use sentence case
+- [ ] No default hotkeys
+- [ ] Use `registerEvent()` and other registration methods
+- [ ] Do not store view references
+- [ ] Use `instanceof` for type checking
+- [ ] All styles use CSS variables
+- [ ] All interactive elements support keyboard operation
+- [ ] All icon buttons have ARIA labels
+- [ ] Focus indicators are clearly visible
+- [ ] Touch targets are at least 44x44px
+- [ ] Use `requestUrl()` instead of `fetch()`
+- [ ] Use the `Platform` API for platform detection
+- [ ] No iOS-incompatible regular expressions
+- [ ] Remove all sample code
+- [ ] manifest.json follows the naming conventions
+- [ ] Tested on mobile (if not desktop-only)
 
-## 13. ESLint 配置
+## 13. ESLint Configuration
 
-安装并配置 ESLint:
+Install and configure ESLint:
 
 ```bash
 npm install --save-dev eslint-plugin-obsidianmd
@@ -666,13 +666,13 @@ export default [
 ];
 ```
 
-运行检查:
+Run checks:
 
 ```bash
 npm run lint
 ```
 
-自动修复:
+Auto-fix:
 
 ```bash
 npm run lint -- --fix

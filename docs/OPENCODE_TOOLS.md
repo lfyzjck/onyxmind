@@ -1,46 +1,46 @@
-# OpenCode 工具参考
+# OpenCode Tool Reference
 
-OpenCode 代码目录：`/Users/jiachengkun/opensource/opencode`
-
----
-
-## 核心工具（始终可用）
-
-| 工具          | 说明                                    |
-| ------------- | --------------------------------------- |
-| `bash`        | 执行 shell 命令，支持超时和权限控制     |
-| `read`        | 读取文件或目录内容，支持分页、图片、PDF |
-| `write`       | 创建或覆盖文件内容                      |
-| `glob`        | 使用 glob 模式匹配文件                  |
-| `grep`        | 使用正则表达式搜索文件内容              |
-| `edit`        | 替换文件中的指定文本（支持模糊匹配）    |
-| `webfetch`    | 抓取 URL 内容，自动转换为 Markdown      |
-| `websearch`   | 通过 Exa API 执行网络搜索               |
-| `codesearch`  | 搜索代码片段和文档                      |
-| `skill`       | 加载领域专属技能和工作流                |
-| `task`        | 生成子 agent 会话执行专项任务           |
-| `apply_patch` | 应用 unified patch 格式的文件差异       |
+OpenCode source directory: `/Users/jiachengkun/opensource/opencode`
 
 ---
 
-## 条件工具（按配置启用）
+## Core tools (always available)
 
-| 工具        | 启用条件                                                               |
-| ----------- | ---------------------------------------------------------------------- |
-| `question`  | app/cli/desktop 客户端，或设置 `OPENCODE_ENABLE_QUESTION_TOOL`         |
-| `lsp`       | 设置 `OPENCODE_EXPERIMENTAL_LSP_TOOL` 标志                             |
-| `batch`     | 配置 `config.experimental.batch_tool = true`（最多并发 25 个工具调用） |
-| `plan_exit` | CLI 下设置 `OPENCODE_EXPERIMENTAL_PLAN_MODE`                           |
-| `todowrite` | 按需启用，写入当前会话的 todo 列表                                     |
+| Tool          | Description                                                            |
+| ------------- | ---------------------------------------------------------------------- |
+| `bash`        | Execute shell commands with timeout and permission controls            |
+| `read`        | Read file or directory content with pagination, image, and PDF support |
+| `write`       | Create or overwrite file content                                       |
+| `glob`        | Match files using glob patterns                                        |
+| `grep`        | Search file content using regular expressions                          |
+| `edit`        | Replace specific text in a file (supports fuzzy matching)              |
+| `webfetch`    | Fetch URL content, automatically converted to Markdown                 |
+| `websearch`   | Perform web searches via the Exa API                                   |
+| `codesearch`  | Search code snippets and documentation                                 |
+| `skill`       | Load domain-specific skills and workflows on demand                    |
+| `task`        | Spawn a sub-agent session to handle a specialized task                 |
+| `apply_patch` | Apply file diffs in unified patch format                               |
 
 ---
 
-## 工具注册
+## Conditional tools (enabled by configuration)
 
-工具注册在 `packages/opencode/src/tool/registry.ts` 中管理，支持：
+| Tool        | Enable condition                                                             |
+| ----------- | ---------------------------------------------------------------------------- |
+| `question`  | app/cli/desktop client, or set `OPENCODE_ENABLE_QUESTION_TOOL`               |
+| `lsp`       | Set `OPENCODE_EXPERIMENTAL_LSP_TOOL` flag                                    |
+| `batch`     | Set `config.experimental.batch_tool = true` (up to 25 concurrent tool calls) |
+| `plan_exit` | Set `OPENCODE_EXPERIMENTAL_PLAN_MODE` under CLI                              |
+| `todowrite` | Enable on demand to write the current session's todo list                    |
 
-- 内置工具加载
-- 从 `tool/` 或 `tools/` 目录加载自定义工具
-- 从插件加载工具
-- 根据模型类型和权限过滤工具
-- 根据模型兼容性在 `edit/write` 和 `apply_patch` 之间自动选择
+---
+
+## Tool registry
+
+Tool registration is managed in `packages/opencode/src/tool/registry.ts` and supports:
+
+- Loading built-in tools
+- Loading custom tools from `tool/` or `tools/` directories
+- Loading tools from plugins
+- Filtering tools by model type and permissions
+- Automatically selecting between `edit/write` and `apply_patch` based on model compatibility

@@ -239,10 +239,10 @@ export function QuestionComposer({ question, onReply }: QuestionComposerProps) {
 
       {/* Footer: keyboard hints + action button */}
       <div className="onyxmind-qc-footer">
-        <span className="onyxmind-qc-hint">↑↓ 移动</span>
-        {isMulti && <span className="onyxmind-qc-hint">Space 切换</span>}
+        <span className="onyxmind-qc-hint">↑↓ Navigate</span>
+        {isMulti && <span className="onyxmind-qc-hint">Space Toggle</span>}
         <span className="onyxmind-qc-hint">
-          Enter {isLast ? "确认" : "下一题"}
+          Enter {isLast ? "Confirm" : "Next"}
         </span>
         <button
           className="onyxmind-qc-submit"
@@ -253,7 +253,7 @@ export function QuestionComposer({ question, onReply }: QuestionComposerProps) {
             icon={submitting ? "loader" : isLast ? "send" : "arrow-right"}
             className="onyxmind-btn-icon"
           />
-          {isLast ? "确认" : "下一题"}
+          {isLast ? "Confirm" : "Next"}
         </button>
       </div>
     </div>

@@ -1,285 +1,285 @@
-# OnyxMind 实现路线图
+# OnyxMind Implementation Roadmap
 
-> 最后更新: 2026-03-02
+> Last updated: 2026-03-02
 
-## 当前进度总览
+## Current Progress Overview
 
-| 阶段                 | 状态      | 完成度 |
-| -------------------- | --------- | ------ |
-| 阶段 0: 准备工作     | ✅ 完成   | 100%   |
-| 阶段 1: MVP 核心功能 | ✅ 完成   | 100%   |
-| 阶段 2: 增强功能     | 🔄 进行中 | 82%    |
-| 阶段 3: 编辑器集成   | 🔄 进行中 | 35%    |
-| 阶段 4: 优化和完善   | 🔄 进行中 | 12%    |
-| 阶段 5: 发布准备     | ⏳ 待开始 | 0%     |
-
----
-
-## 阶段 0: 准备工作 ✅
-
-### 环境搭建
-
-- [x] 基础项目结构
-- [x] 安装 OpenCode SDK (`@opencode-ai/sdk`)
-- [x] 配置 TypeScript 类型定义
-- [x] 设置开发环境和热重载
-
-### 技术调研
-
-- [x] 研究 OpenCode SDK API（v2）
-- [x] 实现 OpenCode 本地服务器启动与连接
-- [x] 验证流式响应（SSE 事件流）
-- [x] 验证文件操作能力（通过 Agent 工具调用）
+| Phase                       | Status         | Completion |
+| --------------------------- | -------------- | ---------- |
+| Phase 0: Preparation        | ✅ Complete    | 100%       |
+| Phase 1: MVP Core Features  | ✅ Complete    | 100%       |
+| Phase 2: Enhanced Features  | 🔄 In Progress | 82%        |
+| Phase 3: Editor Integration | 🔄 In Progress | 35%        |
+| Phase 4: Optimization       | 🔄 In Progress | 12%        |
+| Phase 5: Release Prep       | ⏳ Not Started | 0%         |
 
 ---
 
-## 阶段 1: MVP 核心功能 ✅
+## Phase 0: Preparation ✅
 
-### 1.1 OpenCode 集成 ✅
+### Environment Setup
 
-**实现文件**: `src/services/opencode-service.ts`
+- [x] Basic project structure
+- [x] Install OpenCode SDK (`@opencode-ai/sdk`)
+- [x] Configure TypeScript type definitions
+- [x] Set up development environment and hot reload
 
-- [x] `initialize()` - 启动内嵌 OpenCode 服务器，配置模型、Provider、CORS
-- [x] `createSession()` - 创建会话，绑定 vault 目录
-- [x] `sendPrompt()` - 发送请求 + SSE 流式响应（content / thinking / tool_use / error）
-- [x] `abortSession()` - 中断正在进行的会话
-- [x] `deleteSession()` - 删除会话
-- [x] `destroy()` - 同步关闭服务器（支持 onunload）
-- [x] 错误处理（ApiError、ProviderAuthError、ContextOverflow 等分类处理）
-- [x] 端口冲突处理（启动前 kill 残留进程）
-- [x] PATH 增强（修复 GUI 环境找不到 opencode 二进制的问题）
+### Technical Research
 
-### 1.2 设置页面 ✅
-
-**实现文件**: `src/settings.ts`
-
-- [x] OpenCode 服务 URL 配置
-- [x] API 密钥（密码字段）
-- [x] Provider ID 和 Model ID 配置
-- [x] 行为设置（搜索范围、自动保存、文件操作确认、历史消息数）
-- [x] 高级设置（超时、重试次数、流式响应开关）
-
-### 1.3 聊天界面 ✅
-
-**实现文件**: `src/views/chat-view.tsx`
-
-- [x] 消息列表容器（支持 Markdown 渲染）
-- [x] 自动扩展输入框
-- [x] 发送按钮 + Enter 快捷键
-- [x] 中止按钮（Stop）及即时 UI 反馈
-- [x] Thinking 指示器
-- [x] 欢迎消息
-- [x] 错误消息显示
-- [x] 流式响应逐字渲染
-- [x] 新建会话 / 清空消息操作
-- [x] React 组件化重构（替代旧 DOM imperative 渲染）
-
-### 1.4 命令注册 ✅
-
-**实现文件**: `src/main.ts`
-
-- [x] Ribbon 图标（message-square）
-- [x] `open-chat` - 打开聊天面板
-- [x] `ask-about-note` - 询问当前笔记
-- [x] `summarize-note` - 总结当前笔记
-- [x] 设置页面注册
-
-### 1.5 Agent 系统提示词 ✅
-
-**实现文件**: `src/services/agent-prompt.ts`
-
-- [x] Vault 路径感知（自动注入绝对路径）
-- [x] Obsidian 原生规则（路径、wikilink、frontmatter、Dataview）
-- [x] 工具调用指导（Read/Edit/Bash/Glob/Grep 使用规范）
-- [x] WebSearch 时机判断规则
-- [x] 知识库操作规范（模板、日记、链接维护）
-- [x] 自定义提示词扩展支持
+- [x] Research OpenCode SDK API (v2)
+- [x] Implement OpenCode local server startup and connection
+- [x] Validate streaming responses (SSE event stream)
+- [x] Validate file operation capabilities (via Agent tool calls)
 
 ---
 
-## 阶段 2: 增强功能 🔄
+## Phase 1: MVP Core Features ✅
 
-### 2.1 流式响应 ✅
+### 1.1 OpenCode Integration ✅
 
-- [x] content 增量文本实时渲染
-- [x] Thinking 指示器（loading 状态）
-- [x] 流式错误处理（AbortError 静默过滤）
-- [x] 用户中止（本地 + 服务端双重中断）
-- [x] thinking 内容折叠展示（`details` 折叠块）
-- [x] tool_use 工具调用状态渲染（running/completed/error 卡片 + 输出）
+**Implementation file**: `src/services/opencode-service.ts`
 
-### 2.2 会话管理 🔄
+- [x] `initialize()` - Start embedded OpenCode server, configure model, Provider, CORS
+- [x] `createSession()` - Create session, bind vault directory
+- [x] `sendPrompt()` - Send request + SSE streaming response (content / thinking / tool_use / error)
+- [x] `abortSession()` - Abort an ongoing session
+- [x] `deleteSession()` - Delete a session
+- [x] `destroy()` - Synchronously shut down server (supports onunload)
+- [x] Error handling (ApiError, ProviderAuthError, ContextOverflow, etc. categorized handling)
+- [x] Port conflict handling (kill residual processes before startup)
+- [x] PATH enhancement (fix issue where opencode binary cannot be found in GUI environment)
 
-- [x] 会话 CRUD（创建、获取、删除、设活跃）
-- [x] 消息历史管理（增加、清空）
-- [x] 会话序列化/反序列化（toJSON/fromJSON）
-- [x] 新建会话按钮
-- [x] 清空消息按钮
-- [x] 会话侧边栏 / 选择器 UI（sidebar 紧凑模式，序号 1/2/3...）
-- [x] active session 切换时拉取并渲染历史消息
-- [x] 按 vault directory 作用域隔离会话（`session.list` 过滤 `directory=<vault_path>`）
-- [x] active session 上限控制（默认 3，可在 settings 配置）
-- [x] 会话管理与消息处理拆分（`SessionManager` / `ChatService`）
-- [x] 新建会话默认设为 active
-- [ ] **会话持久化到磁盘**（目前重启后丢失，需接入 plugin.loadData/saveData）
-- [ ] **会话标题自动生成**（根据首条消息智能命名）
+### 1.2 Settings Page ✅
 
-### 2.3 Slash 命令 ✅
+**Implementation file**: `src/settings.ts`
 
-- [x] 输入 `/` 触发自动补全
-- [x] 拉取并展示全部可用 command（OpenCode `command.list`）
-- [x] 输入过滤（name / description）
-- [x] 键盘交互（↑/↓ 选择，Enter/Tab 插入，Esc 关闭）
-- [x] 鼠标悬停与点击选择
+- [x] OpenCode service URL configuration
+- [x] API key (password field)
+- [x] Provider ID and Model ID configuration
+- [x] Behavior settings (search scope, auto-save, file operation confirmation, history message count)
+- [x] Advanced settings (timeout, retry count, streaming response toggle)
 
-### 2.4 上下文感知 ⏳
+### 1.3 Chat Interface ✅
 
-- [ ] 当前笔记上下文自动注入（打开文件变化时更新）
-- [ ] Vault 文件树结构感知
-- [ ] `@文件名` 手动引用语法（快速插入笔记内容到对话）
-- [ ] 上下文范围配置（当前笔记 / 当前文件夹 / 全库）
+**Implementation file**: `src/views/chat-view.tsx`
 
-### 2.5 文件操作可视化 ✅
+- [x] Message list container (supports Markdown rendering)
+- [x] Auto-expanding input box
+- [x] Send button + Enter shortcut
+- [x] Abort button (Stop) with instant UI feedback
+- [x] Thinking indicator
+- [x] Welcome message
+- [x] Error message display
+- [x] Streaming response character-by-character rendering
+- [x] New session / clear messages operations
+- [x] React component refactor (replaces old DOM imperative rendering)
 
-- [x] 解析 `tool_use` 流式事件（pending / running / completed / error 状态）
-- [x] 消息中内联展示工具卡片（工具名 + 状态图标）
-- [x] 操作详情展开/折叠
-- [x] 操作结果反馈（成功/失败）
+### 1.4 Command Registration ✅
 
----
+**Implementation file**: `src/main.ts`
 
-## 阶段 3: 编辑器集成 🔄
+- [x] Ribbon icon (message-square)
+- [x] `open-chat` - Open chat panel
+- [x] `ask-about-note` - Ask about current note
+- [x] `summarize-note` - Summarize current note
+- [x] Settings page registration
 
-### 3.1 编辑器命令 🔄
+### 1.5 Agent System Prompt ✅
 
-**部分实现** — `ask-about-note` 和 `summarize-note` 已在 `main.ts` 中注册
+**Implementation file**: `src/services/agent-prompt.ts`
 
-- [x] `ask-about-note` - 询问当前笔记（已实现）
-- [x] `summarize-note` - 总结当前笔记（已实现）
-- [ ] `explain-selection` - 解释选中内容
-- [ ] `improve-writing` - 改进选中内容
-- [ ] `generate-content` - 在光标处生成内容
-- [ ] 命令与聊天视图联动（结果直接在聊天面板显示，当前已实现部分）
-
-### 3.2 上下文菜单 ⏳
-
-- [ ] 注册编辑器右键菜单
-- [ ] 选中文本后显示 AI 操作子菜单
-- [ ] 菜单项图标和快捷说明
+- [x] Vault path awareness (automatically inject absolute path)
+- [x] Obsidian native rules (paths, wikilinks, frontmatter, Dataview)
+- [x] Tool call guidance (Read/Edit/Bash/Glob/Grep usage specifications)
+- [x] WebSearch timing rules
+- [x] Knowledge base operation specifications (templates, daily notes, link maintenance)
+- [x] Custom prompt extension support
 
 ---
 
-## 阶段 4: 优化和完善 🔄
+## Phase 2: Enhanced Features 🔄
 
-### 4.1 性能优化
+### 2.1 Streaming Response ✅
 
-- [ ] 消息列表虚拟滚动（长对话性能）
-- [ ] 防抖输入处理
-- [ ] Markdown 渲染异步化（避免阻塞 UI）
-- [ ] 服务初始化失败重试（当前设置变更后会立即重新 initialize，可能冲突）
+- [x] Real-time rendering of incremental content text
+- [x] Thinking indicator (loading state)
+- [x] Streaming error handling (AbortError silently filtered)
+- [x] User abort (local + server-side dual interruption)
+- [x] Thinking content collapsed display (`details` collapsible block)
+- [x] tool_use tool call status rendering (running/completed/error cards + output)
 
-### 4.2 错误处理完善
+### 2.2 Session Management 🔄
 
-- [ ] 网络状态检测（显示 offline/connecting 状态）
-- [ ] 服务未就绪时的友好引导（当前仅 Notice 提示）
-- [ ] `searchFiles` / `searchText` API 对齐修复（当前标注为 TODO）
-- [ ] 错误日志持久化
+- [x] Session CRUD (create, get, delete, set active)
+- [x] Message history management (add, clear)
+- [x] Session serialization/deserialization (toJSON/fromJSON)
+- [x] New session button
+- [x] Clear messages button
+- [x] Session sidebar / selector UI (sidebar compact mode, numbered 1/2/3...)
+- [x] Fetch and render history messages when switching active session
+- [x] Session isolation scoped by vault directory (`session.list` filtered by `directory=<vault_path>`)
+- [x] Active session limit control (default 3, configurable in settings)
+- [x] Session management and message handling split (`SessionManager` / `ChatService`)
+- [x] New session set as active by default
+- [ ] **Session persistence to disk** (currently lost on restart, needs plugin.loadData/saveData integration)
+- [ ] **Auto-generate session title** (smart naming based on first message)
 
-### 4.3 UI/UX 改进
+### 2.3 Slash Commands ✅
 
-- [ ] 移动端适配（触摸目标 ≥ 44×44px，布局响应式）
-- [ ] 消息 Copy 按钮
-- [ ] 消息 Regenerate 按钮
-- [ ] 代码块一键复制
-- [ ] 设置页面"测试连接"按钮
-- [ ] 图标按钮替换 emoji（使用 Obsidian setIcon API）
-- [ ] 主题适配（确保 dark/light 均正常显示）
+- [x] Type `/` to trigger autocomplete
+- [x] Fetch and display all available commands (OpenCode `command.list`)
+- [x] Input filtering (name / description)
+- [x] Keyboard interaction (↑/↓ to select, Enter/Tab to insert, Esc to close)
+- [x] Mouse hover and click selection
 
-### 4.4 代码质量
+### 2.4 Context Awareness ⏳
 
-- [ ] 消除所有 `as any` 类型断言（SDK 类型定义完善后）
-- [ ] `getChatView()` 中的 `as ChatView` 替换为 `instanceof` 检查
-- [ ] `execSync`/`child_process` 安全性评估（考虑替代方案）
-- [ ] ESLint 全量通过（eslint-plugin-obsidianmd）
+- [ ] Auto-inject current note context (update on open file change)
+- [ ] Vault file tree structure awareness
+- [ ] `@filename` manual reference syntax (quickly insert note content into conversation)
+- [ ] Context scope configuration (current note / current folder / entire vault)
 
-### 4.5 测试
+### 2.5 File Operation Visualization ✅
 
-- [ ] OpencodeService 单元测试
-- [ ] SessionManager 单元测试
-- [ ] 端到端集成测试
+- [x] Parse `tool_use` streaming events (pending / running / completed / error states)
+- [x] Inline tool cards in messages (tool name + status icon)
+- [x] Operation details expand/collapse
+- [x] Operation result feedback (success/failure)
 
 ---
 
-## 阶段 5: 发布准备 ⏳
+## Phase 3: Editor Integration 🔄
 
-### 5.1 代码审查
+### 3.1 Editor Commands 🔄
 
-- [ ] Obsidian 最佳实践全量检查（对照 OBSIDIAN_BEST_PRACTICES.md）
-- [ ] 安全审查（API 密钥存储、XSS 防护）
-- [ ] 依赖审查（确认无不必要的 node 原生模块）
+**Partially implemented** — `ask-about-note` and `summarize-note` are already registered in `main.ts`
 
-### 5.2 兼容性测试
+- [x] `ask-about-note` - Ask about current note (implemented)
+- [x] `summarize-note` - Summarize current note (implemented)
+- [ ] `explain-selection` - Explain selected content
+- [ ] `improve-writing` - Improve selected content
+- [ ] `generate-content` - Generate content at cursor position
+- [ ] Commands linked with chat view (results displayed directly in chat panel, partially implemented)
 
-- [ ] macOS（主要开发平台）
-- [ ] Windows（路径分隔符、opencode 二进制查找）
+### 3.2 Context Menu ⏳
+
+- [ ] Register editor right-click menu
+- [ ] Show AI operations submenu after selecting text
+- [ ] Menu item icons and shortcut descriptions
+
+---
+
+## Phase 4: Optimization 🔄
+
+### 4.1 Performance Optimization
+
+- [ ] Message list virtual scrolling (long conversation performance)
+- [ ] Debounced input handling
+- [ ] Async Markdown rendering (avoid blocking UI)
+- [ ] Retry on service initialization failure (currently re-initializes immediately on settings change, may conflict)
+
+### 4.2 Error Handling Improvements
+
+- [ ] Network status detection (display offline/connecting state)
+- [ ] User-friendly guidance when service is not ready (currently only Notice prompt)
+- [ ] `searchFiles` / `searchText` API alignment fix (currently marked as TODO)
+- [ ] Error log persistence
+
+### 4.3 UI/UX Improvements
+
+- [ ] Mobile adaptation (touch targets ≥ 44×44px, responsive layout)
+- [ ] Message copy button
+- [ ] Message regenerate button
+- [ ] One-click copy for code blocks
+- [ ] Settings page "Test Connection" button
+- [ ] Replace emoji icon buttons (use Obsidian setIcon API)
+- [ ] Theme adaptation (ensure correct display in both dark/light modes)
+
+### 4.4 Code Quality
+
+- [ ] Eliminate all `as any` type assertions (after SDK type definitions are complete)
+- [ ] Replace `as ChatView` in `getChatView()` with `instanceof` check
+- [ ] Security evaluation of `execSync`/`child_process` (consider alternatives)
+- [ ] ESLint full pass (eslint-plugin-obsidianmd)
+
+### 4.5 Testing
+
+- [ ] OpencodeService unit tests
+- [ ] SessionManager unit tests
+- [ ] End-to-end integration tests
+
+---
+
+## Phase 5: Release Preparation ⏳
+
+### 5.1 Code Review
+
+- [ ] Full Obsidian best practices check (against OBSIDIAN_BEST_PRACTICES.md)
+- [ ] Security review (API key storage, XSS protection)
+- [ ] Dependency review (confirm no unnecessary native node modules)
+
+### 5.2 Compatibility Testing
+
+- [ ] macOS (primary development platform)
+- [ ] Windows (path separators, opencode binary lookup)
 - [ ] Linux
-- [ ] iOS / Android（移动端）
-- [ ] Obsidian 最低版本兼容性验证
+- [ ] iOS / Android (mobile)
+- [ ] Obsidian minimum version compatibility validation
 
-### 5.3 发布
+### 5.3 Release
 
-- [ ] 更新 manifest.json 版本号
-- [ ] 编写 CHANGELOG
-- [ ] 完善 README（安装、配置、使用截图）
-- [ ] 提交到 Obsidian 社区插件仓库
-- [ ] 创建 GitHub Release
-
----
-
-## 关键里程碑
-
-| 里程碑             | 状态             | 交付物                                                                      |
-| ------------------ | ---------------- | --------------------------------------------------------------------------- |
-| M1: MVP 完成       | ✅ 已完成        | 基础对话、流式响应、设置页面                                                |
-| M2: 增强功能完成   | 🔄 进行中（82%） | 多 session 管理、tool/thinking 可视化、slash command（剩余：持久化/上下文） |
-| M3: 编辑器集成完成 | 🔄 进行中（35%） | 选中操作命令、右键菜单                                                      |
-| M4: 优化完成       | 🔄 进行中（12%） | 性能、UX、代码质量                                                          |
-| M5: 发布           | ⏳ 待开始        | 提交社区插件                                                                |
+- [ ] Update manifest.json version number
+- [ ] Write CHANGELOG
+- [ ] Complete README (installation, configuration, usage screenshots)
+- [ ] Submit to Obsidian community plugins repository
+- [ ] Create GitHub Release
 
 ---
 
-## 近期优先任务（Next Up）
+## Key Milestones
 
-按优先级排序：
-
-1. **会话持久化** — 接入 `plugin.loadData/saveData`，重启不丢失历史
-2. **`explain-selection` / `improve-writing` 命令** — 补全编辑器命令集
-3. **上下文注入与 `@文件名` 引用** — 强化上下文感知能力
-4. **设置页面“测试连接”按钮** — 提升配置体验
-5. **`searchFiles` / `searchText` API 对齐修复** — 消除 TODO 功能缺口
-6. **移动端与响应式适配** — 验证 sidebar 与输入体验
-7. **会话标题自动生成** — 提升多会话可读性
+| Milestone                   | Status               | Deliverables                                                                                           |
+| --------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------ |
+| M1: MVP Complete            | ✅ Done              | Basic conversation, streaming response, settings page                                                  |
+| M2: Enhanced Features Done  | 🔄 In Progress (82%) | Multi-session management, tool/thinking visualization, slash commands (remaining: persistence/context) |
+| M3: Editor Integration Done | 🔄 In Progress (35%) | Selection operation commands, right-click menu                                                         |
+| M4: Optimization Done       | 🔄 In Progress (12%) | Performance, UX, code quality                                                                          |
+| M5: Release                 | ⏳ Not Started       | Submit to community plugins                                                                            |
 
 ---
 
-## 已知技术债务
+## Near-term Priority Tasks (Next Up)
 
-| 问题                                                        | 位置                                                  | 优先级         |
-| ----------------------------------------------------------- | ----------------------------------------------------- | -------------- |
-| `searchFiles` / `searchText` 被注释，API 类型不匹配         | `opencode-service.ts:690` / `opencode-service.ts:723` | 中             |
-| `getChatView()` 使用 `as ChatView` 类型断言                 | `main.ts:145`                                         | 低             |
-| `updateSettings()` 直接调用 `initialize()` 可能导致并发冲突 | `opencode-service.ts:755`                             | 中             |
-| `execSync` 在渲染进程使用                                   | `opencode-service.ts:118`                             | 低（目前可用） |
-| `MarkdownRenderer.renderMarkdown` 传入 `plugin as any`      | `chat-view.tsx:99`                                    | 低             |
+Sorted by priority:
+
+1. **Session persistence** — Integrate `plugin.loadData/saveData`, preserve history across restarts
+2. **`explain-selection` / `improve-writing` commands** — Complete the editor command set
+3. **Context injection and `@filename` references** — Strengthen context awareness capabilities
+4. **Settings page "Test Connection" button** — Improve configuration experience
+5. **`searchFiles` / `searchText` API alignment fix** — Eliminate TODO feature gaps
+6. **Mobile and responsive adaptation** — Validate sidebar and input experience
+7. **Auto-generate session titles** — Improve readability in multi-session scenarios
 
 ---
 
-## 风险和缓解
+## Known Technical Debt
 
-| 风险                      | 影响 | 概率 | 缓解措施                                            |
-| ------------------------- | ---- | ---- | --------------------------------------------------- |
-| OpenCode SDK API 变更     | 高   | 中   | 锁定 SDK 版本（当前 v2），关注 changelog            |
-| opencode 二进制不在 PATH  | 高   | 中   | `findOpencodeExecutable()` 已覆盖常见安装路径       |
-| 端口 4096 冲突            | 中   | 低   | 启动前 `killPortProcess()` 已处理                   |
-| Obsidian API 兼容性       | 高   | 低   | 遵循最佳实践，最低版本设为 1.4.0                    |
-| 移动端 node.js API 不可用 | 高   | 高   | `execSync`/`child_process` 在移动端不可用，需要适配 |
+| Issue                                                                             | Location                                              | Priority             |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------- | -------------------- |
+| `searchFiles` / `searchText` commented out, API type mismatch                     | `opencode-service.ts:690` / `opencode-service.ts:723` | Medium               |
+| `getChatView()` uses `as ChatView` type assertion                                 | `main.ts:145`                                         | Low                  |
+| `updateSettings()` calling `initialize()` directly may cause concurrency conflict | `opencode-service.ts:755`                             | Medium               |
+| `execSync` used in render process                                                 | `opencode-service.ts:118`                             | Low (functional now) |
+| `MarkdownRenderer.renderMarkdown` passed `plugin as any`                          | `chat-view.tsx:99`                                    | Low                  |
+
+---
+
+## Risks and Mitigations
+
+| Risk                              | Impact | Probability | Mitigation                                                           |
+| --------------------------------- | ------ | ----------- | -------------------------------------------------------------------- |
+| OpenCode SDK API changes          | High   | Medium      | Lock SDK version (currently v2), monitor changelog                   |
+| opencode binary not in PATH       | High   | Medium      | `findOpencodeExecutable()` already covers common installation paths  |
+| Port 4096 conflict                | Medium | Low         | `killPortProcess()` handles this before startup                      |
+| Obsidian API compatibility        | High   | Low         | Follow best practices, minimum version set to 1.4.0                  |
+| Mobile node.js API unavailability | High   | High        | `execSync`/`child_process` not available on mobile, needs adaptation |

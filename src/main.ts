@@ -138,7 +138,7 @@ export default class OnyxMindPlugin extends Plugin {
   }
 
   /**
-   * Get the chat view (按需获取，不存储引用)
+   * Get the chat view (fetched on demand, no reference stored)
    */
   getChatView(): ChatView | null {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CHAT);
