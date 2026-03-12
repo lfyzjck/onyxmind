@@ -21,6 +21,7 @@ export const ARIA_LABEL_SLASH_MENU = "Slash commands";
 export const ARIA_LABEL_STOP = "Stop generating";
 export const ARIA_LABEL_SEND = "Send message";
 export const ARIA_LABEL_REFRESH_SESSIONS = "Refresh sessions";
+export const ARIA_LABEL_SESSION_HISTORY = "Session history";
 export const ARIA_LABEL_NEW_SESSION = "New session";
 export const ARIA_LABEL_CLEAR_MESSAGES = "Clear messages";
 

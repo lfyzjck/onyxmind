@@ -2,30 +2,43 @@ import type { OnyxMindSession } from "../../../services/session-manager";
 import {
   ARIA_LABEL_CLEAR_MESSAGES,
   ARIA_LABEL_NEW_SESSION,
-  ARIA_LABEL_REFRESH_SESSIONS,
+  ARIA_LABEL_SESSION_HISTORY,
   CLASS_IS_ACTIVE,
   LABEL_NO_SESSIONS,
 } from "../constants";
+import { SessionHistoryMenu } from "./session-history-menu";
 
 interface SessionStripProps {
   sessions: OnyxMindSession[];
   activeSessionId: string | null;
+  historyMenuOpen: boolean;
+  historySessions: OnyxMindSession[];
+  historySelectedIndex: number;
   onSwitchSession: (sessionId: string) => void;
   onCloseSession: (sessionId: string) => void;
   onNewSession: () => void;
   onClearMessages: () => void;
-  onRefresh: () => void;
+  onToggleHistory: () => void;
+  onLoadHistorySession: (sessionId: string) => void;
+  onSetHistorySelectedIndex: (index: number) => void;
+  onCloseHistoryMenu: () => void;
 }
 
 export function SessionStrip(props: SessionStripProps) {
   const {
     sessions,
     activeSessionId,
+    historyMenuOpen,
+    historySessions,
+    historySelectedIndex,
     onSwitchSession,
     onCloseSession,
     onNewSession,
     onClearMessages,
-    onRefresh,
+    onToggleHistory,
+    onLoadHistorySession,
+    onSetHistorySelectedIndex,
+    onCloseHistoryMenu,
   } = props;
 
   return (
@@ -81,13 +94,24 @@ export function SessionStrip(props: SessionStripProps) {
         >
           ⌫
         </button>
-        <button
-          className="onyxmind-icon-button"
-          aria-label={ARIA_LABEL_REFRESH_SESSIONS}
-          onClick={onRefresh}
-        >
-          ↻
-        </button>
+        <div className="onyxmind-history-container">
+          <button
+            className="onyxmind-icon-button"
+            aria-label={ARIA_LABEL_SESSION_HISTORY}
+            onClick={onToggleHistory}
+          >
+            📜
+          </button>
+          {historyMenuOpen && (
+            <SessionHistoryMenu
+              sessions={historySessions}
+              selectedIndex={historySelectedIndex}
+              onSelectSession={onLoadHistorySession}
+              onSetSelectedIndex={onSetHistorySelectedIndex}
+              onClose={onCloseHistoryMenu}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

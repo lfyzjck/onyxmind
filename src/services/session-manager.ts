@@ -13,6 +13,12 @@ export interface OnyxMindSession {
   createdAt: number;
   updatedAt: number;
   summarized?: boolean;
+  /**
+   * Whether this session has been created on the OpenCode server.
+   * false = pending (created locally, not yet sent to server)
+   * true  = remote (exists on the OpenCode server)
+   */
+  remoteCreated: boolean;
 }
 
 export type CreateSessionError = "limit-reached" | "service-error";
@@ -50,29 +56,27 @@ export class SessionManager {
   }
 
   /**
-   * Create a new session
+   * Create a new local pending session.
+   * The session is not sent to the OpenCode server until the first message is
+   * delivered via sendPrompt() (lazy remote creation).
    */
-  async createSession(title?: string): Promise<CreateSessionResult> {
+  createSession(title?: string): CreateSessionResult {
     if (this.isAtSessionLimit()) {
       return { session: null, error: "limit-reached" };
     }
 
-    const sessionId = await this.opencodeService.createSession(title);
-
-    if (!sessionId) {
-      return { session: null, error: "service-error" };
-    }
-
+    const localId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const session: OnyxMindSession = {
-      id: sessionId,
+      id: localId,
       title: title || `Session ${this.sessions.size + 1}`,
       messages: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      remoteCreated: false,
     };
 
-    this.sessions.set(sessionId, session);
-    this.setActiveSession(sessionId);
+    this.sessions.set(localId, session);
+    this.setActiveSession(localId);
 
     return { session };
   }
@@ -131,18 +135,44 @@ export class SessionManager {
   }
 
   /**
-   * Activate a session and hydrate its message history from OpenCode
+   * Activate a session and hydrate its message history from OpenCode.
+   * Pending (not yet remote-created) sessions skip the remote fetch.
    */
   async activateSession(id: string): Promise<boolean> {
     if (!this.setActiveSession(id)) {
       return false;
     }
-    await this.refreshActiveSessionMessages();
+    const session = this.sessions.get(id);
+    if (session?.remoteCreated) {
+      await this.refreshActiveSessionMessages();
+    }
     return true;
   }
 
   /**
-   * Delete a session
+   * Close a session locally without deleting it from the OpenCode server.
+   * The session remains on the server and can be loaded later from history.
+   */
+  async closeSessionLocally(id: string): Promise<boolean> {
+    const session = this.sessions.get(id);
+    if (!session) {
+      return false;
+    }
+
+    this.sessions.delete(id);
+
+    // If this was the active session, switch to the most recently updated remaining session
+    if (this.activeSessionId === id) {
+      const next = this.getMostRecentSession();
+      this.activeSessionId = next ? next.id : null;
+    }
+
+    return true;
+  }
+
+  /**
+   * Delete a session. Pending sessions are only removed locally; remote
+   * sessions are also deleted on the OpenCode server.
    */
   async deleteSession(id: string): Promise<boolean> {
     const session = this.sessions.get(id);
@@ -150,10 +180,10 @@ export class SessionManager {
       return false;
     }
 
-    // Delete from OpenCode
-    await this.opencodeService.deleteSession(id);
+    if (session.remoteCreated) {
+      await this.opencodeService.deleteSession(id);
+    }
 
-    // Remove from local storage
     this.sessions.delete(id);
 
     // If this was the active session, switch to the most recently updated remaining session
@@ -230,11 +260,16 @@ export class SessionManager {
   }
 
   /**
-   * Summarize active session and update its title
+   * Summarize active session and update its title.
+   * Returns false when the session has not yet been created remotely.
    */
   async summarizeActiveSession(): Promise<boolean> {
     const session = this.getActiveSession();
     if (!session) {
+      return false;
+    }
+
+    if (!session.remoteCreated) {
       return false;
     }
 
@@ -336,6 +371,8 @@ export class SessionManager {
               typeof session.updatedAt === "number"
                 ? session.updatedAt
                 : Date.now(),
+            // Sessions persisted before lazy-creation was introduced are remote.
+            remoteCreated: session.remoteCreated !== false,
           });
         }
       }
@@ -369,12 +406,17 @@ export class SessionManager {
   }
 
   /**
-   * Refresh message history for a specific session
+   * Refresh message history for a specific session.
+   * No-op for pending sessions that have not yet been created on the server.
    */
   async refreshSessionMessages(sessionId: string): Promise<boolean> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       return false;
+    }
+
+    if (!session.remoteCreated) {
+      return true;
     }
 
     const messages = await this.opencodeService.getSessionMessages(sessionId);
@@ -392,7 +434,8 @@ export class SessionManager {
   }
 
   /**
-   * Refresh local session index from OpenCode session.list filtered by current vault directory
+   * Refresh local session index from OpenCode session.list filtered by current vault directory.
+   * Pending (not yet remote-created) local sessions are preserved across the refresh.
    */
   async refreshSessionsFromService(): Promise<boolean> {
     const remoteSessions: Session[] | null =
@@ -406,6 +449,13 @@ export class SessionManager {
     for (const remote of remoteSessions) {
       const existing = this.sessions.get(remote.id);
       next.set(remote.id, this.mergeRemoteSession(remote, existing));
+    }
+
+    // Carry over any pending sessions that don't exist on the server yet.
+    for (const [id, session] of previousSessions) {
+      if (!session.remoteCreated) {
+        next.set(id, session);
+      }
     }
 
     // Keep the current active local session if remote list is temporarily stale.
@@ -434,23 +484,59 @@ export class SessionManager {
       messages: existing?.messages ?? [],
       createdAt: existing?.createdAt ?? remote.time.created,
       updatedAt: Math.max(existing?.updatedAt ?? 0, remote.time.updated),
+      summarized: existing?.summarized,
+      remoteCreated: true,
     };
   }
 
   /**
-   * Send a prompt to a session and return a streaming response iterator
+   * Send a prompt to a session and return a streaming response iterator.
+   *
+   * If the session is still pending (remoteCreated === false), the OpenCode
+   * session is created now (lazy remote creation).  The session's id is updated
+   * to the server-assigned id and the internal Map is re-keyed accordingly so
+   * that all subsequent lookups continue to work without any caller changes.
    */
   async sendPrompt(
     sessionId: string,
     prompt: string,
   ): Promise<AsyncIterableIterator<StreamChunk> | null> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return null;
+    }
+
+    if (!session.remoteCreated) {
+      const remoteId = await this.opencodeService.createSession(session.title);
+      if (!remoteId) {
+        return null;
+      }
+
+      // Migrate the session to its server-assigned id.
+      this.sessions.delete(sessionId);
+      session.id = remoteId;
+      session.remoteCreated = true;
+      this.sessions.set(remoteId, session);
+
+      if (this.activeSessionId === sessionId) {
+        this.activeSessionId = remoteId;
+      }
+
+      sessionId = remoteId;
+    }
+
     return this.opencodeService.sendPrompt(sessionId, prompt);
   }
 
   /**
-   * Abort a running session request
+   * Abort a running session request.
+   * Returns true immediately for pending sessions (nothing to abort server-side).
    */
   async abortSession(sessionId: string): Promise<boolean> {
+    const session = this.sessions.get(sessionId);
+    if (!session?.remoteCreated) {
+      return true;
+    }
     return this.opencodeService.abortSession(sessionId);
   }
 
@@ -462,5 +548,74 @@ export class SessionManager {
     answers: string[][],
   ): Promise<boolean> {
     return this.opencodeService.replyToQuestion(questionId, answers);
+  }
+
+  /**
+   * Get session history from OpenCode server, excluding locally active sessions.
+   * Returns up to maxCount sessions sorted by creation time (newest first).
+   */
+  async getSessionHistory(maxCount: number = 20): Promise<OnyxMindSession[]> {
+    const remoteSessions = await this.opencodeService.listSessions();
+    if (!remoteSessions) {
+      return [];
+    }
+
+    const localSessionIds = new Set(this.sessions.keys());
+
+    // Filter out sessions that are already loaded locally
+    const historySessions = remoteSessions
+      .filter((remote) => !localSessionIds.has(remote.id))
+      .map((remote) => ({
+        id: remote.id,
+        title: remote.title || "Session",
+        messages: [],
+        createdAt: remote.time.created,
+        updatedAt: remote.time.updated,
+        remoteCreated: true,
+        summarized: false,
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt) // Newest first
+      .slice(0, maxCount);
+
+    return historySessions;
+  }
+
+  /**
+   * Load a session from history into local state and activate it.
+   */
+  async loadSessionFromHistory(sessionId: string): Promise<boolean> {
+    // Check if already loaded
+    if (this.sessions.has(sessionId)) {
+      return this.activateSession(sessionId);
+    }
+
+    // Fetch session details from server
+    const messages = await this.opencodeService.getSessionMessages(sessionId);
+    if (!messages) {
+      return false;
+    }
+
+    // Get session metadata from listSessions
+    const remoteSessions = await this.opencodeService.listSessions();
+    const remoteSession = remoteSessions?.find((s) => s.id === sessionId);
+    if (!remoteSession) {
+      return false;
+    }
+
+    // Create local session from remote data
+    const session: OnyxMindSession = {
+      id: sessionId,
+      title: remoteSession.title || "Session",
+      messages,
+      createdAt: remoteSession.time.created,
+      updatedAt: remoteSession.time.updated,
+      remoteCreated: true,
+      summarized: false,
+    };
+
+    this.sessions.set(sessionId, session);
+    this.setActiveSession(sessionId);
+
+    return true;
   }
 }

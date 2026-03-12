@@ -36,11 +36,17 @@ export function ChatViewApp(props: ChatViewAppProps) {
         <SessionStrip
           sessions={controller.sessions}
           activeSessionId={controller.activeSessionId}
+          historyMenuOpen={controller.historyMenuOpen}
+          historySessions={controller.historySessions}
+          historySelectedIndex={controller.historySelectedIndex}
           onSwitchSession={controller.handleSwitchSession}
           onCloseSession={controller.handleCloseSession}
           onNewSession={controller.handleNewSession}
           onClearMessages={controller.handleClearMessages}
-          onRefresh={controller.handleToolbarRefresh}
+          onToggleHistory={controller.handleToggleHistory}
+          onLoadHistorySession={controller.handleLoadHistorySession}
+          onSetHistorySelectedIndex={controller.handleSetHistorySelectedIndex}
+          onCloseHistoryMenu={controller.handleCloseHistoryMenu}
         />
 
         <ChatComposer
@@ -53,6 +59,7 @@ export function ChatViewApp(props: ChatViewAppProps) {
           providerId={controller.providerId}
           modelId={controller.modelId}
           noteChipPath={controller.noteChipPath}
+          noteChipAttached={controller.noteChipAttached}
           activeQuestion={controller.activeQuestion}
           onQuestionReply={controller.handleQuestionReply}
           onInputChange={controller.handleInputChange}
