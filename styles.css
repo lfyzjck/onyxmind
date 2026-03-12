@@ -574,6 +574,99 @@ code .onyxmind-file-link:hover {
   flex: 0 0 auto;
 }
 
+/* Session history container */
+.onyxmind-history-container {
+  position: relative;
+}
+
+/* Session history dropdown menu */
+.onyxmind-history-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 280px;
+  max-width: 400px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--onyxmind-line);
+  border-radius: 8px;
+  background: var(--onyxmind-bg-panel);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+/* Session history item */
+.onyxmind-history-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid var(--onyxmind-line);
+  background: transparent;
+  color: var(--onyxmind-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.onyxmind-history-item:last-child {
+  border-bottom: none;
+}
+
+.onyxmind-history-item:hover,
+.onyxmind-history-item.is-selected {
+  background: var(--onyxmind-accent-soft);
+}
+
+.onyxmind-history-item:focus-visible {
+  outline: 2px solid var(--onyxmind-accent);
+  outline-offset: -2px;
+}
+
+/* Session history title */
+.onyxmind-history-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--onyxmind-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* Session history date */
+.onyxmind-history-date {
+  font-size: 11px;
+  color: var(--onyxmind-faint);
+  font-family: var(--font-monospace);
+}
+
+/* Empty state */
+.onyxmind-history-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--onyxmind-faint);
+  font-size: 12px;
+}
+
+/* Scrollbar styling */
+.onyxmind-history-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.onyxmind-history-menu::-webkit-scrollbar-thumb {
+  background: var(--onyxmind-line);
+  border-radius: 4px;
+}
+
+.onyxmind-history-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--onyxmind-accent-soft);
+}
+
 .onyxmind-icon-button {
   border: 1px solid var(--onyxmind-line);
   background: var(--onyxmind-bg-soft);

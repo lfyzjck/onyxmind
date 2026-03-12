@@ -27,6 +27,7 @@ interface ChatComposerProps {
   providerId: string;
   modelId: string;
   noteChipPath?: string | null;
+  noteChipAttached?: boolean;
   activeQuestion?: StreamChunkToolUse | null;
   onQuestionReply?: (questionId: string, answers: string[][]) => Promise<void>;
   onInputChange: (value: string, cursor: number) => void;
@@ -43,7 +44,15 @@ interface ChatComposerProps {
   onRemoveNote?: () => void;
 }
 
-function NoteChip({ path, onRemove }: { path: string; onRemove: () => void }) {
+function NoteChip({
+  path,
+  attached,
+  onRemove,
+}: {
+  path: string;
+  attached: boolean;
+  onRemove: () => void;
+}) {
   const iconRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -53,22 +62,25 @@ function NoteChip({ path, onRemove }: { path: string; onRemove: () => void }) {
   }, []);
 
   const filename = path.split("/").pop() || path;
+  const title = attached ? "已附加到上下文" : path;
 
   return (
     <div className="onyxmind-note-chip">
       <span ref={iconRef} className="onyxmind-note-chip-icon" />
-      <span className="onyxmind-note-chip-name" title={path}>
+      <span className="onyxmind-note-chip-name" title={title}>
         {filename}
       </span>
-      <button
-        type="button"
-        className="onyxmind-note-chip-remove"
-        aria-label="Remove current note from context"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={onRemove}
-      >
-        ×
-      </button>
+      {!attached && (
+        <button
+          type="button"
+          className="onyxmind-note-chip-remove"
+          aria-label="Remove current note from context"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onRemove}
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }
@@ -84,6 +96,7 @@ export function ChatComposer(props: ChatComposerProps) {
     providerId,
     modelId,
     noteChipPath,
+    noteChipAttached = false,
     activeQuestion,
     onQuestionReply,
     onInputChange,
@@ -116,7 +129,11 @@ export function ChatComposer(props: ChatComposerProps) {
     <div className="onyxmind-input-container">
       {noteChipPath && onRemoveNote && (
         <div className="onyxmind-context-row">
-          <NoteChip path={noteChipPath} onRemove={onRemoveNote} />
+          <NoteChip
+            path={noteChipPath}
+            attached={noteChipAttached}
+            onRemove={onRemoveNote}
+          />
         </div>
       )}
 

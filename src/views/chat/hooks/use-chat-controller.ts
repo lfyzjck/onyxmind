@@ -40,11 +40,18 @@ interface UseChatControllerResult {
   slashSelectedIndex: number;
   providerId: string;
   modelId: string;
+  historyMenuOpen: boolean;
+  historySessions: OnyxMindSession[];
+  historySelectedIndex: number;
   handleToolbarRefresh: () => void;
   handleSwitchSession: (sessionId: string) => void;
   handleCloseSession: (sessionId: string) => void;
   handleNewSession: () => void;
   handleClearMessages: () => void;
+  handleToggleHistory: () => void;
+  handleLoadHistorySession: (sessionId: string) => void;
+  handleCloseHistoryMenu: () => void;
+  handleSetHistorySelectedIndex: (index: number) => void;
   handleInputChange: (value: string, cursor: number) => void;
   handleInputClick: (value: string, cursor: number) => void;
   handleInputKeyUp: (value: string, cursor: number, key: string) => void;
@@ -62,6 +69,7 @@ interface UseChatControllerResult {
   ) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   noteChipPath: string | null;
+  noteChipAttached: boolean;
   handleRemoveNote: () => void;
 }
 
@@ -76,19 +84,21 @@ export function useChatController(
   const streamAbortRef = useRef<AbortController | null>(null);
   const isAbortingRef = useRef(false);
   const activeSessionIdRef = useRef<string | null>(null);
-  const currentNotePathRef = useRef<string | null>(
-    plugin.app.workspace.getActiveFile()?.path ?? null,
+  const [initNotePath] = useState<string | null>(
+    () => plugin.app.workspace.getActiveFile()?.path ?? null,
   );
+  const currentNotePathRef = useRef<string | null>(initNotePath);
   const userRemovedNoteRef = useRef(false);
 
   const [sessions, setSessions] = useState<OnyxMindSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [currentNotePath, setCurrentNotePath] = useState<string | null>(
-    () => plugin.app.workspace.getActiveFile()?.path ?? null,
+    initNotePath,
   );
   const [showNoteChip, setShowNoteChip] = useState<boolean>(
-    () => plugin.app.workspace.getActiveFile() !== null,
+    initNotePath !== null,
   );
+  const [attachedNotePath, setAttachedNotePath] = useState<string | null>(null);
   const [inputText, setInputText] = useState("");
   const [commands, setCommands] = useState<AvailableCommand[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -101,6 +111,9 @@ export function useChatController(
   const [slashEnd, setSlashEnd] = useState<number | null>(null);
   const [slashQuery, setSlashQuery] = useState("");
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
+  const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
+  const [historySessions, setHistorySessions] = useState<OnyxMindSession[]>([]);
+  const [historySelectedIndex, setHistorySelectedIndex] = useState(0);
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? null,
@@ -319,9 +332,9 @@ export function useChatController(
         if (notePath && !userRemovedNoteRef.current) {
           promptToSend = `${text}\n\n<current_note>\n${notePath}\n</current_note>`;
           displayContent = text;
+          setAttachedNotePath(notePath);
         }
         sentNoteSessionIds.current.add(session.id);
-        setShowNoteChip(false);
       }
 
       const userMessage = plugin.chatService.addUserMessage(
@@ -381,6 +394,15 @@ export function useChatController(
           streamAbortRef.current = null;
         }
         setIsStreaming(false);
+
+        // sendPrompt may have migrated the session to a remote id; ensure the
+        // new id is tracked so the note context is not re-appended on the next
+        // message in the same session.
+        const currentSessionId = plugin.sessionManager.getActiveSessionId();
+        if (currentSessionId) {
+          sentNoteSessionIds.current.add(currentSessionId);
+        }
+
         await refreshSessionState();
 
         // Summarize session after first complete conversation
@@ -423,7 +445,7 @@ export function useChatController(
       return;
     }
 
-    const result = await plugin.sessionManager.createSession();
+    const result = plugin.sessionManager.createSession();
     if (!result.session) {
       handleSessionCreationError(result);
       return;
@@ -433,6 +455,7 @@ export function useChatController(
     const newPath = plugin.app.workspace.getActiveFile()?.path ?? null;
     currentNotePathRef.current = newPath;
     setCurrentNotePath(newPath);
+    setAttachedNotePath(null);
     setShowNoteChip(newPath !== null);
 
     await refreshSessionState();
@@ -492,7 +515,8 @@ export function useChatController(
         return;
       }
 
-      const success = await plugin.sessionManager.deleteSession(sessionId);
+      const success =
+        await plugin.sessionManager.closeSessionLocally(sessionId);
       if (!success) {
         appendError("Failed to close session");
         return;
@@ -502,6 +526,46 @@ export function useChatController(
     },
     [appendError, isStreaming, plugin, refreshSessionState],
   );
+
+  const handleToggleHistory = useCallback(async (): Promise<void> => {
+    if (isStreaming) {
+      new Notice("Stop current response before viewing history.");
+      return;
+    }
+
+    if (!historyMenuOpen) {
+      // Fetch history when opening
+      const history = await plugin.sessionManager.getSessionHistory(20);
+      setHistorySessions(history);
+      setHistorySelectedIndex(0);
+    }
+
+    setHistoryMenuOpen(!historyMenuOpen);
+  }, [historyMenuOpen, isStreaming, plugin]);
+
+  const handleLoadHistorySession = useCallback(
+    async (sessionId: string): Promise<void> => {
+      if (isStreaming) {
+        new Notice("Stop current response before loading a session.");
+        return;
+      }
+
+      const success =
+        await plugin.sessionManager.loadSessionFromHistory(sessionId);
+      if (!success) {
+        appendError("Failed to load session from history");
+        return;
+      }
+
+      setHistoryMenuOpen(false);
+      await refreshSessionState(false, false);
+    },
+    [appendError, isStreaming, plugin, refreshSessionState],
+  );
+
+  const handleCloseHistoryMenu = useCallback(() => {
+    setHistoryMenuOpen(false);
+  }, []);
 
   const handleInputChange = useCallback(
     (value: string, cursor: number) => {
@@ -720,12 +784,20 @@ export function useChatController(
     slashSelectedIndex,
     providerId: plugin.settings.providerId,
     modelId: plugin.settings.modelId,
+    historyMenuOpen,
+    historySessions,
+    historySelectedIndex,
     handleToolbarRefresh: () => void handleRefresh(),
     handleSwitchSession,
     handleCloseSession: (sessionId: string) =>
       void handleCloseSession(sessionId),
     handleNewSession: () => void handleNewSession(),
     handleClearMessages,
+    handleToggleHistory: () => void handleToggleHistory(),
+    handleLoadHistorySession: (sessionId: string) =>
+      void handleLoadHistorySession(sessionId),
+    handleCloseHistoryMenu,
+    handleSetHistorySelectedIndex: setHistorySelectedIndex,
     handleInputChange,
     handleInputClick,
     handleInputKeyUp,
@@ -739,7 +811,8 @@ export function useChatController(
     handleAbort: () => void handleAbort(),
     handleQuestionReply,
     sendMessage,
-    noteChipPath: showNoteChip ? currentNotePath : null,
+    noteChipPath: showNoteChip ? (attachedNotePath ?? currentNotePath) : null,
+    noteChipAttached: showNoteChip && attachedNotePath !== null,
     handleRemoveNote,
   };
 }
