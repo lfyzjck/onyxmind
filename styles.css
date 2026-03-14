@@ -1,5 +1,389 @@
 /* OnyxMind chat UI (Claudian-inspired sidebar layout) */
 
+/* ── Settings Panel ──────────────────────────────────────────────────────── */
+
+.onyxmind-settings-panel-mount {
+  padding-bottom: 24px;
+}
+
+.onyxmind-sp {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top tab bar */
+.onyxmind-sp-tabbar {
+  display: flex;
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin-bottom: 20px;
+  gap: 0;
+}
+
+.onyxmind-sp-tab {
+  padding: 8px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  font-weight: 500;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.onyxmind-sp-tab:hover {
+  color: var(--text-normal);
+}
+
+.onyxmind-sp-tab.is-active {
+  color: var(--text-normal);
+  border-bottom-color: var(--interactive-accent);
+}
+
+/* Tab content wrapper */
+.onyxmind-sp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Provider tab ─────────────────────────────────────────────────────────── */
+
+.onyxmind-sp-provider-layout {
+  display: flex;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  min-height: 280px;
+}
+
+/* Left sidebar */
+.onyxmind-sp-sidebar {
+  width: 130px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  display: flex;
+  flex-direction: column;
+}
+
+.onyxmind-sp-provider-item {
+  width: 100%;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: none;
+  border-left: 2px solid transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.onyxmind-sp-provider-item:hover:not(.is-selected) {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.onyxmind-sp-provider-item.is-selected {
+  background: var(--background-primary);
+  color: var(--text-normal);
+  border-left-color: var(--interactive-accent);
+}
+
+.onyxmind-sp-provider-name {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Status dot: no-key=empty ring, has-key=filled, is-active=accent */
+.onyxmind-sp-provider-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid var(--text-faint);
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.onyxmind-sp-provider-dot.has-key {
+  border-color: var(--text-muted);
+  background: var(--text-muted);
+}
+
+.onyxmind-sp-provider-dot.is-active {
+  border-color: var(--interactive-accent);
+  background: var(--interactive-accent);
+}
+
+/* Right config panel */
+.onyxmind-sp-config {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  background: var(--background-primary);
+}
+
+.onyxmind-sp-config-title {
+  font-size: var(--font-ui-small);
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Field row */
+.onyxmind-sp-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.onyxmind-sp-field-label {
+  flex: 0 0 88px;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+/* Models section */
+.onyxmind-sp-models-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.onyxmind-sp-models-head,
+.onyxmind-sp-model-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.onyxmind-sp-models-head {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.onyxmind-sp-col-model  { flex: 1; min-width: 0; }
+.onyxmind-sp-col-tokens { flex: 0 0 84px; }
+.onyxmind-sp-col-reas   { flex: 0 0 60px; display: flex; justify-content: center; }
+.onyxmind-sp-col-del    { flex: 0 0 26px; }
+
+.onyxmind-sp-remove-btn {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+  transition: background 0.1s, color 0.1s;
+}
+
+.onyxmind-sp-remove-btn:hover {
+  background: var(--background-modifier-error);
+  color: var(--text-error);
+}
+
+.onyxmind-sp-add-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 3px 10px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.onyxmind-sp-add-btn:hover {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+}
+
+/* Active model strip */
+.onyxmind-sp-active-model {
+  padding: 14px 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+}
+
+.onyxmind-sp-active-model-title {
+  font-size: var(--font-ui-small);
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-bottom: 10px;
+}
+
+.onyxmind-sp-active-model-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.onyxmind-sp-active-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Agent / Advanced tabs ────────────────────────────────────────────────── */
+
+.onyxmind-sp-rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  overflow: hidden;
+}
+
+.onyxmind-sp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  gap: 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.onyxmind-sp-row:last-child {
+  border-bottom: none;
+}
+
+.onyxmind-sp-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.onyxmind-sp-row-name {
+  font-size: var(--font-ui-small);
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.onyxmind-sp-row-desc {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.onyxmind-sp-row-ctrl {
+  flex-shrink: 0;
+}
+
+/* ── Shared form controls ─────────────────────────────────────────────────── */
+
+.onyxmind-sp-input {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-modifier-form-field);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.onyxmind-sp-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb, 139 125 255) / 0.2);
+}
+
+/* size variants */
+.onyxmind-sp-input-sm  { width: 80px; }
+.onyxmind-sp-input-md  { width: 240px; }
+
+.onyxmind-sp-select {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-modifier-form-field);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+}
+
+.onyxmind-sp-select-sm { width: 140px; }
+
+/* ── Toggle ───────────────────────────────────────────────────────────────── */
+
+.onyxmind-sp-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.onyxmind-sp-toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+
+.onyxmind-sp-toggle-track {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--background-modifier-border);
+  transition: background 0.2s;
+}
+
+.onyxmind-sp-toggle input[type="checkbox"]:checked + .onyxmind-sp-toggle-track {
+  background: var(--interactive-accent);
+}
+
+.onyxmind-sp-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+
+.onyxmind-sp-toggle input[type="checkbox"]:checked + .onyxmind-sp-toggle-track .onyxmind-sp-toggle-thumb {
+  transform: translateX(18px);
+}
+
+.onyxmind-sp-toggle:focus-within .onyxmind-sp-toggle-track {
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
 .onyxmind-react-root {
   height: 100%;
 }
@@ -865,8 +1249,42 @@ code .onyxmind-file-link:hover {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
+}
+
+.onyxmind-footer-model-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--background-modifier-form-field);
+  border: 1px solid var(--background-modifier-border);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--onyxmind-muted);
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+}
+
+.onyxmind-footer-provider {
+  font-weight: 600;
+  color: var(--onyxmind-faint);
+  flex-shrink: 0;
+}
+
+.onyxmind-footer-sep {
+  color: var(--onyxmind-faint);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.onyxmind-footer-model {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .onyxmind-footer-item {

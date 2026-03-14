@@ -25,6 +25,7 @@ interface ChatComposerProps {
   filteredCommands: AvailableCommand[];
   slashSelectedIndex: number;
   providerId: string;
+  providerName: string;
   modelId: string;
   noteChipPath?: string | null;
   noteChipAttached?: boolean;
@@ -94,6 +95,7 @@ export function ChatComposer(props: ChatComposerProps) {
     filteredCommands,
     slashSelectedIndex,
     providerId,
+    providerName,
     modelId,
     noteChipPath,
     noteChipAttached = false,
@@ -204,8 +206,14 @@ export function ChatComposer(props: ChatComposerProps) {
 
           <div className="onyxmind-input-footer">
             <div className="onyxmind-footer-info">
-              <span className="onyxmind-footer-item">{providerId}</span>
-              <span className="onyxmind-footer-item">{modelId}</span>
+              <span
+                className="onyxmind-footer-model-chip"
+                title={`${providerId} / ${modelId}`}
+              >
+                <span className="onyxmind-footer-provider">{providerName}</span>
+                <span className="onyxmind-footer-sep">·</span>
+                <span className="onyxmind-footer-model">{modelId}</span>
+              </span>
               <span className="onyxmind-footer-item">{LABEL_SLASH_HINT}</span>
               <span className="onyxmind-footer-item">{LABEL_LOCAL_SAFE}</span>
             </div>

@@ -14,6 +14,16 @@ export default class OnyxMindPlugin extends Plugin {
   opencodeService: OpencodeService;
   sessionManager: SessionManager;
   chatService: ChatService;
+  private settingsChangeListeners: Array<() => void> = [];
+
+  onSettingsChange(listener: () => void): () => void {
+    this.settingsChangeListeners.push(listener);
+    return () => {
+      this.settingsChangeListeners = this.settingsChangeListeners.filter(
+        (l) => l !== listener,
+      );
+    };
+  }
 
   async onload() {
     await this.loadSettings();
@@ -162,6 +172,9 @@ export default class OnyxMindPlugin extends Plugin {
     // Update service settings
     if (this.opencodeService) {
       this.opencodeService.updateSettings(this.settings);
+    }
+    for (const listener of this.settingsChangeListeners) {
+      listener();
     }
   }
 }

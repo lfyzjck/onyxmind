@@ -57,6 +57,7 @@ export function ChatViewApp(props: ChatViewAppProps) {
           filteredCommands={controller.filteredCommands}
           slashSelectedIndex={controller.slashSelectedIndex}
           providerId={controller.providerId}
+          providerName={controller.providerName}
           modelId={controller.modelId}
           noteChipPath={controller.noteChipPath}
           noteChipAttached={controller.noteChipAttached}

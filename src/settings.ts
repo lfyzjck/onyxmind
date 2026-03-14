@@ -1,12 +1,58 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab } from "obsidian";
+import React from "react";
+import { createRoot, type Root } from "react-dom/client";
 import type OnyxMindPlugin from "./main";
+import { SettingsPanel } from "./views/settings/SettingsPanel";
+
+export type ProviderId = "openai" | "anthropic" | "kimi" | "openrouter";
+
+export interface ModelConfig {
+  modelId: string;
+  maxTokens: number;
+  isReasoning: boolean;
+}
+
+export interface ProviderConfig {
+  id: ProviderId;
+  apiKey: string;
+  apiBase: string;
+  models: ModelConfig[];
+}
+
+export const PROVIDER_META: Record<
+  ProviderId,
+  { name: string; defaultApiBase: string; fixedApiBase: boolean }
+> = {
+  openai: {
+    name: "OpenAI",
+    defaultApiBase: "https://api.openai.com/v1",
+    fixedApiBase: false,
+  },
+  anthropic: {
+    name: "Anthropic",
+    defaultApiBase: "https://api.anthropic.com",
+    fixedApiBase: false,
+  },
+  kimi: {
+    name: "Kimi",
+    defaultApiBase: "https://api.moonshot.cn/v1",
+    fixedApiBase: false,
+  },
+  openrouter: {
+    name: "OpenRouter",
+    defaultApiBase: "https://openrouter.ai/api/v1",
+    fixedApiBase: true,
+  },
+};
 
 export interface OnyxMindSettings {
   // OpenCode connection
   opencodeBaseUrl: string;
-  apiKey: string;
-  providerId: string;
-  modelId: string;
+
+  // Provider configuration
+  providers: ProviderConfig[];
+  activeProviderId: ProviderId;
+  activeModelId: string;
 
   // Behavior settings
   defaultSearchScope: "current-folder" | "vault";
@@ -23,11 +69,65 @@ export interface OnyxMindSettings {
 }
 
 export const DEFAULT_SETTINGS: OnyxMindSettings = {
-  // OpenCode connection
   opencodeBaseUrl: "http://localhost:4096",
-  apiKey: "",
-  providerId: "kimi-for-coding",
-  modelId: "kimi-for-coding/k2p5",
+  providers: [
+    {
+      id: "openai",
+      apiKey: "",
+      apiBase: "",
+      models: [
+        { modelId: "gpt-4o", maxTokens: 128000, isReasoning: false },
+        { modelId: "gpt-4o-mini", maxTokens: 16000, isReasoning: false },
+        { modelId: "o3-mini", maxTokens: 100000, isReasoning: true },
+      ],
+    },
+    {
+      id: "anthropic",
+      apiKey: "",
+      apiBase: "",
+      models: [
+        { modelId: "claude-opus-4-6", maxTokens: 200000, isReasoning: false },
+        {
+          modelId: "claude-sonnet-4-6",
+          maxTokens: 200000,
+          isReasoning: false,
+        },
+        { modelId: "claude-haiku-4-5", maxTokens: 200000, isReasoning: false },
+      ],
+    },
+    {
+      id: "kimi",
+      apiKey: "",
+      apiBase: "",
+      models: [
+        {
+          modelId: "moonshot-v1-128k",
+          maxTokens: 128000,
+          isReasoning: false,
+        },
+        {
+          modelId: "kimi-k2-0711-preview",
+          maxTokens: 128000,
+          isReasoning: false,
+        },
+      ],
+    },
+    {
+      id: "openrouter",
+      apiKey: "",
+      apiBase: "",
+      models: [
+        { modelId: "openai/gpt-4o", maxTokens: 128000, isReasoning: false },
+        {
+          modelId: "anthropic/claude-sonnet-4-5",
+          maxTokens: 200000,
+          isReasoning: false,
+        },
+      ],
+    },
+  ],
+  activeProviderId: "kimi",
+  activeModelId: "kimi-k2-0711-preview",
 
   // Behavior settings
   defaultSearchScope: "vault",
@@ -45,6 +145,7 @@ export const DEFAULT_SETTINGS: OnyxMindSettings = {
 
 export class OnyxMindSettingTab extends PluginSettingTab {
   plugin: OnyxMindPlugin;
+  private root: Root | null = null;
 
   constructor(app: App, plugin: OnyxMindPlugin) {
     super(app, plugin);
@@ -53,202 +154,16 @@ export class OnyxMindSettingTab extends PluginSettingTab {
 
   display(): void {
     const { containerEl } = this;
-
     containerEl.empty();
+    const mount = containerEl.createDiv("onyxmind-settings-panel-mount");
+    this.root = createRoot(mount);
+    this.root.render(
+      React.createElement(SettingsPanel, { plugin: this.plugin }),
+    );
+  }
 
-    // Connection settings
-    new Setting(containerEl).setHeading().setName("Provider");
-
-    new Setting(containerEl)
-      .setName("Service URL")
-      .setDesc("Base URL for the service.")
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter service URL")
-          .setValue(this.plugin.settings.opencodeBaseUrl)
-          .onChange(async (value) => {
-            this.plugin.settings.opencodeBaseUrl = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("Provider")
-      .setDesc("AI model provider.")
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("openai", "OpenAI")
-          .addOption("anthropic", "Anthropic")
-          .addOption("kimi", "Kimi")
-          .addOption("kimi-for-coding", "Kimi for coding")
-          .setValue(this.plugin.settings.providerId)
-          .onChange(async (value) => {
-            this.plugin.settings.providerId = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("API key")
-      .setDesc("API key for model provider.")
-      .addText((text) => {
-        text
-          .setPlaceholder("Enter API key")
-          .setValue(this.plugin.settings.apiKey)
-          .onChange(async (value) => {
-            this.plugin.settings.apiKey = value;
-            await this.plugin.saveSettings();
-          });
-        // Make it a password field
-        text.inputEl.type = "password";
-        return text;
-      });
-
-    new Setting(containerEl)
-      .setName("Model")
-      .setDesc("Model identifier to use.")
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter model ID")
-          .setValue(this.plugin.settings.modelId)
-          .onChange(async (value) => {
-            this.plugin.settings.modelId = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    // Behavior settings
-    new Setting(containerEl).setHeading().setName("Behavior");
-
-    new Setting(containerEl)
-      .setName("Default search scope")
-      .setDesc("Where to search for notes by default.")
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("vault", "Entire vault")
-          .addOption("current-folder", "Current folder")
-          .setValue(this.plugin.settings.defaultSearchScope)
-          .onChange(async (value: "vault" | "current-folder") => {
-            this.plugin.settings.defaultSearchScope = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("Auto-save conversations")
-      .setDesc("Automatically save conversation history.")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.autoSave)
-          .onChange(async (value) => {
-            this.plugin.settings.autoSave = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("Maximum active sessions")
-      .setDesc("Limit how many sessions can stay open at the same time.")
-      .addText((text) =>
-        text
-          .setPlaceholder("3")
-          .setValue(String(this.plugin.settings.maxActiveSessions))
-          .onChange(async (value) => {
-            const num = parseInt(value);
-            if (!isNaN(num) && num > 0) {
-              this.plugin.settings.maxActiveSessions = num;
-              await this.plugin.saveSettings();
-            }
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("Confirm file operations")
-      .setDesc("Ask for confirmation before AI modifies files.")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.confirmFileOperations)
-          .onChange(async (value) => {
-            this.plugin.settings.confirmFileOperations = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("Maximum history messages")
-      .setDesc("Maximum number of messages to keep in history.")
-      .addText((text) =>
-        text
-          .setPlaceholder("50")
-          .setValue(String(this.plugin.settings.maxHistoryMessages))
-          .onChange(async (value) => {
-            const num = parseInt(value);
-            if (!isNaN(num) && num > 0) {
-              this.plugin.settings.maxHistoryMessages = num;
-              await this.plugin.saveSettings();
-            }
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("Show tool calls after streaming")
-      .setDesc(
-        "Keep tool call details visible after a response finishes streaming.",
-      )
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.showToolCallsAfterStreaming)
-          .onChange(async (value) => {
-            this.plugin.settings.showToolCallsAfterStreaming = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    // Advanced settings
-    new Setting(containerEl).setHeading().setName("Advanced");
-
-    new Setting(containerEl)
-      .setName("Request timeout")
-      .setDesc("Timeout for API requests in milliseconds.")
-      .addText((text) =>
-        text
-          .setPlaceholder("30000")
-          .setValue(String(this.plugin.settings.timeout))
-          .onChange(async (value) => {
-            const num = parseInt(value);
-            if (!isNaN(num) && num > 0) {
-              this.plugin.settings.timeout = num;
-              await this.plugin.saveSettings();
-            }
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("Maximum retries")
-      .setDesc("Maximum number of retry attempts for failed requests.")
-      .addText((text) =>
-        text
-          .setPlaceholder("3")
-          .setValue(String(this.plugin.settings.maxRetries))
-          .onChange(async (value) => {
-            const num = parseInt(value);
-            if (!isNaN(num) && num >= 0) {
-              this.plugin.settings.maxRetries = num;
-              await this.plugin.saveSettings();
-            }
-          }),
-      );
-
-    new Setting(containerEl)
-      .setName("Stream responses")
-      .setDesc("Show AI responses in real-time as they are generated.")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.streamResponse)
-          .onChange(async (value) => {
-            this.plugin.settings.streamResponse = value;
-            await this.plugin.saveSettings();
-          }),
-      );
+  hide(): void {
+    this.root?.unmount();
+    this.root = null;
   }
 }
