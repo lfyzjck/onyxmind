@@ -18,6 +18,7 @@ import type {
   CreateSessionResult,
   OnyxMindSession,
 } from "../../../services/session-manager";
+import { PROVIDER_META } from "../../../settings";
 import { findSlashMatch } from "../slash";
 import type { ToolCardMap } from "../types";
 
@@ -39,6 +40,7 @@ interface UseChatControllerResult {
   filteredCommands: AvailableCommand[];
   slashSelectedIndex: number;
   providerId: string;
+  providerName: string;
   modelId: string;
   historyMenuOpen: boolean;
   historySessions: OnyxMindSession[];
@@ -114,6 +116,12 @@ export function useChatController(
   const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
   const [historySessions, setHistorySessions] = useState<OnyxMindSession[]>([]);
   const [historySelectedIndex, setHistorySelectedIndex] = useState(0);
+  const [activeProviderId, setActiveProviderId] = useState(
+    () => plugin.settings.activeProviderId,
+  );
+  const [activeModelId, setActiveModelId] = useState(
+    () => plugin.settings.activeModelId,
+  );
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? null,
@@ -407,7 +415,7 @@ export function useChatController(
 
         // Summarize session after first complete conversation
         if (
-          session.messages.length === 1 &&
+          session.messages.length === 2 &&
           !plugin.sessionManager.isSessionSummarized(session.id)
         ) {
           const success = await plugin.sessionManager.summarizeActiveSession();
@@ -696,6 +704,15 @@ export function useChatController(
     activeSessionIdRef.current = activeSessionId;
   }, [activeSessionId]);
 
+  // Sync active provider/model when settings change from the settings panel
+  useEffect(() => {
+    const unsubscribe = plugin.onSettingsChange(() => {
+      setActiveProviderId(plugin.settings.activeProviderId);
+      setActiveModelId(plugin.settings.activeModelId);
+    });
+    return unsubscribe;
+  }, [plugin]);
+
   useEffect(() => {
     const ref = plugin.app.workspace.on("file-open", (file) => {
       const newPath = file?.path ?? null;
@@ -782,8 +799,9 @@ export function useChatController(
     slashMenuOpen,
     filteredCommands,
     slashSelectedIndex,
-    providerId: plugin.settings.providerId,
-    modelId: plugin.settings.modelId,
+    providerId: activeProviderId,
+    providerName: PROVIDER_META[activeProviderId]?.name ?? activeProviderId,
+    modelId: activeModelId,
     historyMenuOpen,
     historySessions,
     historySelectedIndex,

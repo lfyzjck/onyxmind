@@ -223,27 +223,31 @@ export class OpencodeService {
       const agentPrompt = buildAgentPrompt({ vaultPath: this.vaultPath });
 
       // 1. Start the server (patched version; CORS origins passed via --cors flag)
+      // Build provider config map from all configured providers
+      const providerConfigMap: Record<string, object> = {};
+      for (const p of this.settings.providers) {
+        if (!p.apiKey) continue;
+        providerConfigMap[p.id] = {
+          models: Object.fromEntries(
+            p.models.map((m) => [m.modelId, { name: m.modelId }]),
+          ),
+          options: {
+            apiKey: p.apiKey,
+            ...(p.apiBase ? { baseURL: p.apiBase } : {}),
+          },
+        };
+      }
+
       const serverResult = await createOpencodeServerPatched({
         hostname: SERVER_HOSTNAME,
         port: this.port,
         signal: this.abortController.signal,
         config: {
-          model: this.settings.modelId,
+          model: this.settings.activeModelId,
           server: {
             cors: [OBSIDIAN_CORS_ORIGIN],
           },
-          provider: {
-            [this.settings.providerId]: {
-              models: {
-                [this.settings.modelId]: {
-                  name: this.settings.modelId,
-                },
-              },
-              options: {
-                apiKey: this.settings.apiKey,
-              },
-            },
-          },
+          provider: providerConfigMap,
           permission: {
             websearch: "allow",
           },
@@ -506,8 +510,8 @@ export class OpencodeService {
         sessionID: sessionId,
         parts: [{ type: PART_TYPE_TEXT, text: prompt }],
         model: {
-          providerID: this.settings.providerId,
-          modelID: this.settings.modelId,
+          providerID: this.settings.activeProviderId,
+          modelID: this.settings.activeModelId,
         },
       });
 
@@ -745,8 +749,8 @@ export class OpencodeService {
         sessionID: sessionId,
         parts: [{ type: PART_TYPE_TEXT, text: prompt }],
         model: {
-          providerID: this.settings.providerId,
-          modelID: this.settings.modelId,
+          providerID: this.settings.activeProviderId,
+          modelID: this.settings.activeModelId,
         },
       });
 

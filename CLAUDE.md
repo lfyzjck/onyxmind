@@ -1,89 +1,84 @@
-# Claude 开发指南
+# Claude Development Guide
 
-本文档为 Claude AI 助手提供项目特定的开发指导。
+This document provides project-specific development guidance for the Claude AI assistant.
 
-## 项目概述
+## Project Overview
 
-OnyxMind 是一款基于 OpenCode AI Agent 框架的 Obsidian 智能助手插件。
+OnyxMind is an Obsidian smart assistant plugin built on the OpenCode AI Agent framework.
 
-**核心原理**：
+**Core principles**:
 
-- 插件仅作为用户交互入口
-- 所有 AI 处理和文件操作由 OpenCode Agent 在服务端完成
-- 通过 OpenCode SDK 与服务通信
+- The plugin serves only as the user interaction entry point
+- All AI processing and file operations are performed by the OpenCode Agent on the server
+- Communication with the service is via the OpenCode SDK
 
-## 参考资源
+## Reference Resources
 
-### 代码参考
+### Code Reference
 
-当实现插件功能时遇到不确定的问题，可以参考以下项目的代码实现：
+When implementing plugin features and encountering uncertain issues, you may refer to the following project’s code:
 
-**infio-copilot** (类似功能的 Obsidian 插件)
+**infio-copilot** (Obsidian plugin with similar functionality)
 
-- 路径: `/Users/jiachengkun/opensource/infio-copilot`
-- 用途: 参考 UI 实现、Obsidian API 使用模式、用户交互设计
+- Path: `/Users/jiachengkun/opensource/infio-copilot`
+- Use: Reference for UI implementation, Obsidian API usage patterns, and user interaction design
 
-### 技术文档
+### Technical Documentation
 
 - OpenCode SDK: https://opencode.ai/docs/sdk/
 - Obsidian API: https://docs.obsidian.md
-- 项目设计文档: 见 `PRD.md`, `ARCHITECTURE.md`, `OBSIDIAN_BEST_PRACTICES.md`
+- Project design docs: see `PRD.md`, `ARCHITECTURE.md`, `OBSIDIAN_BEST_PRACTICES.md`
 
-## 开发规范
+## Development Standards
 
-### 必须遵守的 Obsidian 最佳实践
+### Mandatory Obsidian Best Practices
 
-1. **内存管理**
-   - ✅ 使用 `registerEvent()`, `addCommand()` 等注册方法
-   - ❌ 不要存储视图引用在插件属性中
+1. **Memory management**
+   - ✅ Use registration methods such as `registerEvent()`, `addCommand()`
+   - ❌ Do not store view references in plugin properties
 
-2. **类型安全**
-   - ✅ 使用 `instanceof` 检查 TFile/TFolder
-   - ❌ 不要使用类型转换 (as TFile)
+2. **Type safety**
+   - ✅ Use `instanceof` to check TFile/TFolder
+   - ❌ Do not use type assertions (as TFile)
 
-3. **命名规范**
-   - 插件 ID: "onyxmind"
-   - 命令名称: sentence case (如 "Open chat")
-   - 不包含 "command" 字样
+3. **Naming conventions**
+   - Plugin ID: "onyxmind"
+   - Command names: sentence case (e.g. "Open chat")
+   - Do not include the word "command"
 
-4. **文件操作**
-   - ✅ 使用 Editor API 编辑活动文件
-   - ✅ 使用 `Vault.process()` 后台修改文件
-   - ✅ 使用 `requestUrl()` 而非 `fetch()`
+4. **File operations**
+   - ✅ Use Editor API to edit the active file
+   - ✅ Use `Vault.process()` for background file modifications
+   - ✅ Use `requestUrl()` instead of `fetch()`
 
-5. **可访问性（强制）**
-   - 所有交互元素支持键盘导航
-   - 图标按钮添加 aria-label
-   - 使用 `:focus-visible` 定义焦点样式
+5. **Accessibility (required)**
+   - All interactive elements must support keyboard navigation
+   - Add aria-label to icon buttons
+   - Use `:focus-visible` for focus styles
 
-详细规范见 `OBSIDIAN_BEST_PRACTICES.md`
+See `OBSIDIAN_BEST_PRACTICES.md` for full details.
 
-## 项目结构
+## Project Structure
 
 ```
 onyxmind/
 ├── src/
-│   ├── main.ts              # 插件主类
-│   ├── settings.ts          # 设置管理
 │   ├── services/
-│   │   ├── opencode.ts      # OpenCode 服务封装
-│   │   └── session.ts       # 会话管理
 │   ├── views/
-│   │   └── chat-view.ts     # 聊天界面
+│   │   └── chat/
+│   │       ├── components/
+│   │       │   └── tools/
+│   │       └── hooks/
+│   ├── utils/
 │   └── commands/
-│       └── editor-commands.ts
-├── styles.css               # 样式文件
-├── manifest.json            # 插件清单
-└── docs/
-    ├── PRD.md
-    ├── ARCHITECTURE.md
-    ├── OBSIDIAN_BEST_PRACTICES.md
-    ├── ROADMAP.md
-    └── IMPLEMENTATION_EXAMPLE.ts
+├── docs/
+├── tests/
+└── .github/
+    └── workflows/
 ```
 
-## 开发规范
+## Development Workflow
 
-1. 我们遵循 fail-fast 原则，除非必要否则不增加容错代码;
-2. 每次完成代码编写，你需要执行 `bun run lint` 验证代码的格式问题并进行修复;
-3. 所有检查完成后，你需要执行 `bun run build` 构建插件;
+1. We follow a fail-fast approach; do not add defensive/error-handling code unless necessary.
+2. After writing code, run `bun run lint` to check formatting and fix any issues.
+3. After all checks pass, run `bun run build` to build the plugin.
