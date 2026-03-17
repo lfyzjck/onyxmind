@@ -59,10 +59,13 @@ export function ChatViewApp(props: ChatViewAppProps) {
           providerId={controller.providerId}
           providerName={controller.providerName}
           modelId={controller.modelId}
+          configuredProviders={controller.configuredProviders}
           noteChipPath={controller.noteChipPath}
           noteChipAttached={controller.noteChipAttached}
           activeQuestion={controller.activeQuestion}
           onQuestionReply={controller.handleQuestionReply}
+          activePermission={controller.activePermission}
+          onPermissionReply={controller.handlePermissionReply}
           onInputChange={controller.handleInputChange}
           onInputClick={controller.handleInputClick}
           onInputKeyUp={controller.handleInputKeyUp}
@@ -75,6 +78,7 @@ export function ChatViewApp(props: ChatViewAppProps) {
           onSubmit={controller.handleSubmit}
           onAbort={controller.handleAbort}
           onRemoveNote={controller.handleRemoveNote}
+          onModelChange={controller.handleModelChange}
         />
       </div>
     </div>

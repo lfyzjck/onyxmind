@@ -21,7 +21,7 @@ export interface OnyxMindSession {
   remoteCreated: boolean;
 }
 
-export type CreateSessionError = "limit-reached" | "service-error";
+export type CreateSessionError = "service-error";
 
 export interface CreateSessionResult {
   session: OnyxMindSession | null;
@@ -59,10 +59,21 @@ export class SessionManager {
    * Create a new local pending session.
    * The session is not sent to the OpenCode server until the first message is
    * delivered via sendPrompt() (lazy remote creation).
+   *
+   * When the active session count would exceed maxActiveSessions, the oldest
+   * session is evicted (removed from the UI) to make room for the new one.
    */
   createSession(title?: string): CreateSessionResult {
-    if (this.isAtSessionLimit()) {
-      return { session: null, error: "limit-reached" };
+    const limit = this.getSessionLimit();
+    if (this.sessions.size >= limit) {
+      const oldest = this.getAllSessions()[0];
+      if (oldest) {
+        this.sessions.delete(oldest.id);
+        if (this.activeSessionId === oldest.id) {
+          const next = this.getMostRecentSession();
+          this.activeSessionId = next ? next.id : null;
+        }
+      }
     }
 
     const localId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -79,13 +90,6 @@ export class SessionManager {
     this.setActiveSession(localId);
 
     return { session };
-  }
-
-  /**
-   * Check whether session creation is blocked by the configured limit
-   */
-  isAtSessionLimit(): boolean {
-    return this.sessions.size >= this.getSessionLimit();
   }
 
   /**
@@ -435,11 +439,12 @@ export class SessionManager {
 
   /**
    * Refresh local session index from OpenCode session.list filtered by current vault directory.
+   * Only the most recently updated maxActiveSessions sessions are loaded as active tabs.
    * Pending (not yet remote-created) local sessions are preserved across the refresh.
    */
   async refreshSessionsFromService(): Promise<boolean> {
     const remoteSessions: Session[] | null =
-      await this.opencodeService.listSessions();
+      await this.opencodeService.listSessions(this.getSessionLimit());
     if (!remoteSessions) {
       return false;
     }
@@ -548,6 +553,16 @@ export class SessionManager {
     answers: string[][],
   ): Promise<boolean> {
     return this.opencodeService.replyToQuestion(questionId, answers);
+  }
+
+  /**
+   * Reply to a permission request
+   */
+  async replyToPermission(
+    requestId: string,
+    reply: "once" | "always" | "reject",
+  ): Promise<boolean> {
+    return this.opencodeService.replyToPermission(requestId, reply);
   }
 
   /**

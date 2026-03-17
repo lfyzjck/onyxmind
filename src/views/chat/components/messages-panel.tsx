@@ -10,6 +10,7 @@ import type {
 import { useEffect, useMemo, type RefObject } from "react";
 import { LABEL_ERROR, LABEL_RUNNING } from "../constants";
 import { registerFileLinkClickHandler } from "../file-link";
+import { hasActiveQuestion } from "../render-state";
 
 interface MessagesPanelProps {
   plugin: OnyxMindPlugin;
@@ -40,12 +41,8 @@ export function MessagesPanel(props: MessagesPanelProps) {
 
   const showWelcome = messages.length === 0 && !isStreaming;
 
-  // Suppress "Running..." indicator while a question is actively being asked
-  const hasActiveQuestion = useMemo(
-    () =>
-      streamTools.some(
-        (t) => t.tool === "question" && t.status === "running" && t.questionId,
-      ),
+  const hasActiveQuestionTool = useMemo(
+    () => hasActiveQuestion(streamTools),
     [streamTools],
   );
 
@@ -85,7 +82,7 @@ export function MessagesPanel(props: MessagesPanelProps) {
         <div
           className="onyxmind-thinking"
           style={{
-            display: isStreaming && !hasActiveQuestion ? "flex" : "none",
+            display: isStreaming && !hasActiveQuestionTool ? "flex" : "none",
           }}
         >
           <span>{LABEL_RUNNING}</span>

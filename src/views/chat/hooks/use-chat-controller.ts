@@ -18,7 +18,18 @@ import type {
   CreateSessionResult,
   OnyxMindSession,
 } from "../../../services/session-manager";
-import { PROVIDER_META } from "../../../settings";
+import {
+  getConfiguredProviders,
+  PROVIDER_META,
+  type ProviderId,
+  type ProviderConfig,
+} from "../../../settings";
+import {
+  getActivePermission,
+  getActiveQuestion,
+  getToolChunks,
+  mergeToolChunkMap,
+} from "../render-state";
 import { findSlashMatch } from "../slash";
 import type { ToolCardMap } from "../types";
 
@@ -35,6 +46,7 @@ interface UseChatControllerResult {
   streamThinking: string;
   toolChunks: StreamChunkToolUse[];
   activeQuestion: StreamChunkToolUse | null;
+  activePermission: StreamChunkToolUse | null;
   errors: string[];
   slashMenuOpen: boolean;
   filteredCommands: AvailableCommand[];
@@ -42,6 +54,8 @@ interface UseChatControllerResult {
   providerId: string;
   providerName: string;
   modelId: string;
+  configuredProviders: ProviderConfig[];
+  handleModelChange: (providerId: ProviderId, modelId: string) => void;
   historyMenuOpen: boolean;
   historySessions: OnyxMindSession[];
   historySelectedIndex: number;
@@ -68,6 +82,10 @@ interface UseChatControllerResult {
   handleQuestionReply: (
     questionId: string,
     answers: string[][],
+  ) => Promise<void>;
+  handlePermissionReply: (
+    requestId: string,
+    reply: "once" | "always" | "reject",
   ) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   noteChipPath: string | null;
@@ -140,12 +158,13 @@ export function useChatController(
     return `${vaultName} · ${sessions.length} sessions`;
   }, [plugin, sessions.length]);
 
-  const toolChunks = useMemo(() => Object.values(streamTools), [streamTools]);
+  const toolChunks = useMemo(() => getToolChunks(streamTools), [streamTools]);
   const activeQuestion = useMemo(
-    () =>
-      toolChunks.find(
-        (t) => t.tool === "question" && t.status === "running" && t.questionId,
-      ) ?? null,
+    () => getActiveQuestion(toolChunks),
+    [toolChunks],
+  );
+  const activePermission = useMemo(
+    () => getActivePermission(toolChunks),
     [toolChunks],
   );
   const slashMenuOpen = slashStart !== null && !isStreaming;
@@ -239,17 +258,10 @@ export function useChatController(
   );
 
   const handleSessionCreationError = useCallback(
-    (result: CreateSessionResult) => {
-      if (result.error === "limit-reached") {
-        new Notice(
-          `Session limit (${plugin.settings.maxActiveSessions}) reached. ` +
-            "Close an existing session or update the limit in settings.",
-        );
-        return;
-      }
+    (_result: CreateSessionResult) => {
       appendError("Failed to create session");
     },
-    [appendError, plugin],
+    [appendError],
   );
 
   const handleAbort = useCallback(async () => {
@@ -285,6 +297,22 @@ export function useChatController(
       );
       if (!success) {
         appendError("Failed to submit answer");
+      }
+    },
+    [appendError, plugin],
+  );
+
+  const handlePermissionReply = useCallback(
+    async (
+      requestId: string,
+      reply: "once" | "always" | "reject",
+    ): Promise<void> => {
+      const success = await plugin.chatService.replyToPermission(
+        requestId,
+        reply,
+      );
+      if (!success) {
+        appendError("Failed to submit permission reply");
       }
     },
     [appendError, plugin],
@@ -375,15 +403,7 @@ export function useChatController(
               setStreamThinking((prev) => prev + delta);
             },
             onToolUse: (chunk) => {
-              setStreamTools((prev) => {
-                const prevChunk = prev[chunk.partId];
-                return {
-                  ...prev,
-                  [chunk.partId]: prevChunk
-                    ? { ...prevChunk, ...chunk }
-                    : chunk,
-                };
-              });
+              setStreamTools((prev) => mergeToolChunkMap(prev, chunk));
             },
             onError: (error) => {
               const isAbortError =
@@ -782,6 +802,17 @@ export function useChatController(
     isStreaming,
   ]);
 
+  const handleModelChange = useCallback(
+    (pid: ProviderId, mid: string) => {
+      setActiveProviderId(pid);
+      setActiveModelId(mid);
+      plugin.settings.activeProviderId = pid;
+      plugin.settings.activeModelId = mid;
+      void plugin.saveSettings();
+    },
+    [plugin],
+  );
+
   return {
     messagesRef,
     inputRef,
@@ -795,6 +826,7 @@ export function useChatController(
     streamThinking,
     toolChunks,
     activeQuestion,
+    activePermission,
     errors,
     slashMenuOpen,
     filteredCommands,
@@ -802,6 +834,8 @@ export function useChatController(
     providerId: activeProviderId,
     providerName: PROVIDER_META[activeProviderId]?.name ?? activeProviderId,
     modelId: activeModelId,
+    configuredProviders: getConfiguredProviders(plugin.settings.providers),
+    handleModelChange,
     historyMenuOpen,
     historySessions,
     historySelectedIndex,
@@ -828,6 +862,7 @@ export function useChatController(
     handleSubmit: () => void handleSubmit(),
     handleAbort: () => void handleAbort(),
     handleQuestionReply,
+    handlePermissionReply,
     sendMessage,
     noteChipPath: showNoteChip ? (attachedNotePath ?? currentNotePath) : null,
     noteChipAttached: showNoteChip && attachedNotePath !== null,

@@ -29,7 +29,9 @@
   font-size: var(--font-ui-small);
   font-weight: 500;
   margin-bottom: -1px;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .onyxmind-sp-tab:hover {
@@ -81,7 +83,10 @@
   cursor: pointer;
   color: var(--text-muted);
   font-size: var(--font-ui-small);
-  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s,
+    border-color 0.1s;
 }
 
 .onyxmind-sp-provider-item:hover:not(.is-selected) {
@@ -108,7 +113,9 @@
   flex-shrink: 0;
   border: 1.5px solid var(--text-faint);
   background: transparent;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .onyxmind-sp-provider-dot.has-key {
@@ -178,10 +185,21 @@
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.onyxmind-sp-col-model  { flex: 1; min-width: 0; }
-.onyxmind-sp-col-tokens { flex: 0 0 84px; }
-.onyxmind-sp-col-reas   { flex: 0 0 60px; display: flex; justify-content: center; }
-.onyxmind-sp-col-del    { flex: 0 0 26px; }
+.onyxmind-sp-col-model {
+  flex: 1;
+  min-width: 0;
+}
+.onyxmind-sp-col-tokens {
+  flex: 0 0 84px;
+}
+.onyxmind-sp-col-reas {
+  flex: 0 0 60px;
+  display: flex;
+  justify-content: center;
+}
+.onyxmind-sp-col-del {
+  flex: 0 0 26px;
+}
 
 .onyxmind-sp-remove-btn {
   flex: 0 0 26px;
@@ -197,7 +215,9 @@
   cursor: pointer;
   font-size: 11px;
   padding: 0;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 
 .onyxmind-sp-remove-btn:hover {
@@ -215,7 +235,9 @@
   color: var(--text-muted);
   font-size: var(--font-ui-small);
   cursor: pointer;
-  transition: border-color 0.1s, color 0.1s;
+  transition:
+    border-color 0.1s,
+    color 0.1s;
 }
 
 .onyxmind-sp-add-btn:hover {
@@ -318,8 +340,12 @@
 }
 
 /* size variants */
-.onyxmind-sp-input-sm  { width: 80px; }
-.onyxmind-sp-input-md  { width: 240px; }
+.onyxmind-sp-input-sm {
+  width: 80px;
+}
+.onyxmind-sp-input-md {
+  width: 240px;
+}
 
 .onyxmind-sp-select {
   padding: 4px 8px;
@@ -331,7 +357,9 @@
   cursor: pointer;
 }
 
-.onyxmind-sp-select-sm { width: 140px; }
+.onyxmind-sp-select-sm {
+  width: 140px;
+}
 
 /* ── Toggle ───────────────────────────────────────────────────────────────── */
 
@@ -376,7 +404,10 @@
   transition: transform 0.2s;
 }
 
-.onyxmind-sp-toggle input[type="checkbox"]:checked + .onyxmind-sp-toggle-track .onyxmind-sp-toggle-thumb {
+.onyxmind-sp-toggle
+  input[type="checkbox"]:checked
+  + .onyxmind-sp-toggle-track
+  .onyxmind-sp-toggle-thumb {
   transform: translateX(18px);
 }
 
@@ -1253,6 +1284,10 @@ code .onyxmind-file-link:hover {
   flex: 1;
 }
 
+.onyxmind-model-picker {
+  position: relative;
+}
+
 .onyxmind-footer-model-chip {
   display: inline-flex;
   align-items: center;
@@ -1267,6 +1302,82 @@ code .onyxmind-file-link:hover {
   white-space: nowrap;
   max-width: 240px;
   overflow: hidden;
+  cursor: pointer;
+}
+
+.onyxmind-footer-model-chip:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+}
+
+.onyxmind-footer-chevron {
+  font-size: 8px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.onyxmind-model-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  min-width: 220px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+}
+
+.onyxmind-model-menu-empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--onyxmind-muted);
+  text-align: center;
+}
+
+.onyxmind-model-menu-group {
+  margin-bottom: 4px;
+}
+
+.onyxmind-model-menu-group-label {
+  padding: 4px 10px 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--onyxmind-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.onyxmind-model-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--text-normal);
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.onyxmind-model-menu-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.onyxmind-model-menu-item.is-active {
+  color: var(--text-accent);
+  background: var(--background-modifier-hover);
+}
+
+.onyxmind-model-menu-check {
+  font-size: 10px;
+  color: var(--text-accent);
 }
 
 .onyxmind-footer-provider {
@@ -1554,6 +1665,143 @@ code .onyxmind-file-link:hover {
 }
 
 .onyxmind-qc-submit .onyxmind-btn-icon svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+/* ── Permission composer ── */
+
+.onyxmind-pc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.onyxmind-pc-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.onyxmind-pc-icon {
+  flex-shrink: 0;
+  color: var(--color-orange);
+}
+
+.onyxmind-pc-icon svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+}
+
+.onyxmind-pc-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--onyxmind-text);
+}
+
+.onyxmind-pc-type {
+  color: var(--color-orange);
+  font-family: var(--font-monospace);
+}
+
+.onyxmind-pc-patterns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.onyxmind-pc-pattern {
+  font-size: 11px;
+  font-family: var(--font-monospace);
+  background: var(--onyxmind-bg-panel);
+  border: 1px solid var(--onyxmind-line);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--onyxmind-subtle);
+}
+
+.onyxmind-pc-diff {
+  font-size: 11px;
+}
+
+.onyxmind-pc-diff summary {
+  cursor: pointer;
+  color: var(--onyxmind-faint);
+  user-select: none;
+}
+
+.onyxmind-pc-diff-content {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: var(--onyxmind-bg-panel);
+  border: 1px solid var(--onyxmind-line);
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: var(--font-monospace);
+  overflow-x: auto;
+  white-space: pre;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.onyxmind-pc-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.onyxmind-pc-hint {
+  font-size: 10px;
+  color: var(--onyxmind-faint);
+}
+
+.onyxmind-pc-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.onyxmind-pc-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--onyxmind-line);
+  background: var(--onyxmind-bg-panel);
+  color: var(--onyxmind-text);
+  transition: filter 0.1s;
+}
+
+.onyxmind-pc-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.onyxmind-pc-btn:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.onyxmind-pc-btn-deny {
+  color: var(--color-red);
+  border-color: rgba(var(--color-red-rgb, 255, 80, 80), 0.3);
+}
+
+.onyxmind-pc-btn-always {
+  background: var(--onyxmind-accent-soft);
+  border-color: rgba(139, 125, 255, 0.35);
+  color: var(--onyxmind-accent);
+}
+
+.onyxmind-pc-btn svg {
   width: 12px;
   height: 12px;
   display: block;
