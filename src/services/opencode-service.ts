@@ -254,7 +254,7 @@ export class OpencodeService {
           provider: providerConfigMap,
           permission: {
             websearch: "allow",
-            edit: "ask"
+            edit: "ask",
           },
           agent: {
             build: {

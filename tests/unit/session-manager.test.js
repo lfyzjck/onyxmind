@@ -66,7 +66,13 @@ test("createSession enforces the active-session limit by evicting the oldest ses
   assert.ok(third);
   assert.equal(manager.getSessionCount(), 2);
   assert.equal(manager.getSession(first.id), undefined);
-  assert.equal(manager.getAllSessions().map((session) => session.title).join(","), "Second,Third");
+  assert.equal(
+    manager
+      .getAllSessions()
+      .map((session) => session.title)
+      .join(","),
+    "Second,Third",
+  );
   assert.equal(manager.getActiveSessionId(), third.id);
 });
 

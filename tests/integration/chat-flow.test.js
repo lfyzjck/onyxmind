@@ -121,11 +121,14 @@ test("chat flow keeps user and assistant messages in the migrated remote session
   assert.equal(activeSession.id, "remote-1");
   assert.equal(activeSession.remoteCreated, true);
   assert.equal(activeSession.messages.length, 2);
-  assert.deepEqual(activeSession.messages.map((message) => message.role), [
-    "user",
-    "assistant",
-  ]);
-  assert.equal(activeSession.messages[0].displayContent, "Please inspect the vault");
+  assert.deepEqual(
+    activeSession.messages.map((message) => message.role),
+    ["user", "assistant"],
+  );
+  assert.equal(
+    activeSession.messages[0].displayContent,
+    "Please inspect the vault",
+  );
   assert.equal(activeSession.messages[1].content, "Finished");
   assert.deepEqual(
     activeSession.messages[1].tools?.map((tool) => ({

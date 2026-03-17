@@ -43,10 +43,10 @@ test("mergeToolChunkMap merges partial updates without losing first-seen order",
     questionReply,
   );
 
-  assert.deepEqual(getToolChunks(merged).map((tool) => tool.partId), [
-    "tool-1",
-    "tool-2",
-  ]);
+  assert.deepEqual(
+    getToolChunks(merged).map((tool) => tool.partId),
+    ["tool-1", "tool-2"],
+  );
   assert.equal(merged["tool-1"].questionId, "que-1");
   assert.deepEqual(merged["tool-1"].input, first.input);
   assert.equal(merged["tool-2"].output, "hi");

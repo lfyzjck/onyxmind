@@ -246,14 +246,20 @@ export function ChatComposer(props: ChatComposerProps) {
                   aria-expanded={modelMenuOpen}
                   onClick={() => setModelMenuOpen((v) => !v)}
                 >
-                  <span className="onyxmind-footer-provider">{providerName}</span>
+                  <span className="onyxmind-footer-provider">
+                    {providerName}
+                  </span>
                   <span className="onyxmind-footer-sep">·</span>
                   <span className="onyxmind-footer-model">{modelId}</span>
                   <span className="onyxmind-footer-chevron">▾</span>
                 </button>
 
                 {modelMenuOpen && (
-                  <div className="onyxmind-model-menu" role="listbox" aria-label="Select model">
+                  <div
+                    className="onyxmind-model-menu"
+                    role="listbox"
+                    aria-label="Select model"
+                  >
                     {configuredProviders.length === 0 ? (
                       <div className="onyxmind-model-menu-empty">
                         No providers configured
@@ -282,7 +288,9 @@ export function ChatComposer(props: ChatComposerProps) {
                               >
                                 {m.modelId}
                                 {isActive && (
-                                  <span className="onyxmind-model-menu-check">✓</span>
+                                  <span className="onyxmind-model-menu-check">
+                                    ✓
+                                  </span>
                                 )}
                               </button>
                             );
