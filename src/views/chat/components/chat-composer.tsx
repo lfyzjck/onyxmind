@@ -1,10 +1,12 @@
 import { setIcon } from "obsidian";
 import type { KeyboardEvent, RefObject } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   AvailableCommand,
   StreamChunkToolUse,
 } from "../../../services/opencode-service";
+import type { ProviderId, ProviderConfig } from "../../../settings";
+import { PROVIDER_META } from "../../../settings";
 import {
   ARIA_LABEL_SEND,
   ARIA_LABEL_SLASH_MENU,
@@ -16,6 +18,7 @@ import {
   PLACEHOLDER_CHAT_INPUT,
 } from "../constants";
 import { QuestionComposer } from "./question-composer";
+import { PermissionComposer } from "./permission-composer";
 
 interface ChatComposerProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
@@ -27,10 +30,16 @@ interface ChatComposerProps {
   providerId: string;
   providerName: string;
   modelId: string;
+  configuredProviders: ProviderConfig[];
   noteChipPath?: string | null;
   noteChipAttached?: boolean;
   activeQuestion?: StreamChunkToolUse | null;
   onQuestionReply?: (questionId: string, answers: string[][]) => Promise<void>;
+  activePermission?: StreamChunkToolUse | null;
+  onPermissionReply?: (
+    requestId: string,
+    reply: "once" | "always" | "reject",
+  ) => Promise<void>;
   onInputChange: (value: string, cursor: number) => void;
   onInputClick: (value: string, cursor: number) => void;
   onInputKeyUp: (value: string, cursor: number, key: string) => void;
@@ -43,6 +52,7 @@ interface ChatComposerProps {
   onSubmit: () => void;
   onAbort: () => void;
   onRemoveNote?: () => void;
+  onModelChange: (providerId: ProviderId, modelId: string) => void;
 }
 
 function NoteChip({
@@ -97,10 +107,13 @@ export function ChatComposer(props: ChatComposerProps) {
     providerId,
     providerName,
     modelId,
+    configuredProviders,
     noteChipPath,
     noteChipAttached = false,
     activeQuestion,
     onQuestionReply,
+    activePermission,
+    onPermissionReply,
     onInputChange,
     onInputClick,
     onInputKeyUp,
@@ -113,10 +126,12 @@ export function ChatComposer(props: ChatComposerProps) {
     onSubmit,
     onAbort,
     onRemoveNote,
+    onModelChange,
   } = props;
 
   const sendIconRef = useRef<HTMLSpanElement>(null);
   const abortIconRef = useRef<HTMLSpanElement>(null);
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
 
   useEffect(() => {
     if (sendIconRef.current) {
@@ -126,6 +141,14 @@ export function ChatComposer(props: ChatComposerProps) {
       setIcon(abortIconRef.current, "square");
     }
   }, []);
+
+  // Close model menu when clicking outside
+  useEffect(() => {
+    if (!modelMenuOpen) return;
+    const handler = () => setModelMenuOpen(false);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [modelMenuOpen]);
 
   return (
     <div className="onyxmind-input-container">
@@ -139,7 +162,12 @@ export function ChatComposer(props: ChatComposerProps) {
         </div>
       )}
 
-      {activeQuestion && onQuestionReply ? (
+      {activePermission && onPermissionReply ? (
+        <PermissionComposer
+          permission={activePermission}
+          onReply={onPermissionReply}
+        />
+      ) : activeQuestion && onQuestionReply ? (
         <QuestionComposer question={activeQuestion} onReply={onQuestionReply} />
       ) : (
         <>
@@ -206,14 +234,65 @@ export function ChatComposer(props: ChatComposerProps) {
 
           <div className="onyxmind-input-footer">
             <div className="onyxmind-footer-info">
-              <span
-                className="onyxmind-footer-model-chip"
-                title={`${providerId} / ${modelId}`}
+              <div
+                className="onyxmind-model-picker"
+                onMouseDown={(e) => e.stopPropagation()}
               >
-                <span className="onyxmind-footer-provider">{providerName}</span>
-                <span className="onyxmind-footer-sep">·</span>
-                <span className="onyxmind-footer-model">{modelId}</span>
-              </span>
+                <button
+                  type="button"
+                  className="onyxmind-footer-model-chip"
+                  title={`${providerId} / ${modelId}`}
+                  aria-label="Select model"
+                  aria-expanded={modelMenuOpen}
+                  onClick={() => setModelMenuOpen((v) => !v)}
+                >
+                  <span className="onyxmind-footer-provider">{providerName}</span>
+                  <span className="onyxmind-footer-sep">·</span>
+                  <span className="onyxmind-footer-model">{modelId}</span>
+                  <span className="onyxmind-footer-chevron">▾</span>
+                </button>
+
+                {modelMenuOpen && (
+                  <div className="onyxmind-model-menu" role="listbox" aria-label="Select model">
+                    {configuredProviders.length === 0 ? (
+                      <div className="onyxmind-model-menu-empty">
+                        No providers configured
+                      </div>
+                    ) : (
+                      configuredProviders.map((p) => (
+                        <div key={p.id} className="onyxmind-model-menu-group">
+                          <div className="onyxmind-model-menu-group-label">
+                            {PROVIDER_META[p.id]?.name ?? p.id}
+                          </div>
+                          {p.models.map((m) => {
+                            const isActive =
+                              p.id === providerId && m.modelId === modelId;
+                            return (
+                              <button
+                                key={m.modelId}
+                                type="button"
+                                role="option"
+                                aria-selected={isActive}
+                                className={`onyxmind-model-menu-item${isActive ? " is-active" : ""}`}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  onModelChange(p.id, m.modelId);
+                                  setModelMenuOpen(false);
+                                }}
+                              >
+                                {m.modelId}
+                                {isActive && (
+                                  <span className="onyxmind-model-menu-check">✓</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
               <span className="onyxmind-footer-item">{LABEL_SLASH_HINT}</span>
               <span className="onyxmind-footer-item">{LABEL_LOCAL_SAFE}</span>
             </div>

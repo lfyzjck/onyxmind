@@ -10,7 +10,7 @@ import {
   type PatchedServerOptions,
 } from "../utils/opencode-server";
 import { execSync } from "child_process";
-import type { OnyxMindSettings } from "../settings";
+import { isProviderConfigured, type OnyxMindSettings } from "../settings";
 import { findOpencodeExecutable, getEnhancedPath } from "../utils/env";
 import { buildAgentPrompt } from "./agent-prompt";
 import type {
@@ -124,6 +124,10 @@ export interface StreamChunkToolUse {
   output?: string; // completed
   error?: string; // error
   questionId?: string; // for question tools: the que_xxx ID needed to reply
+  permissionId?: string; // for permission requests: the per_xxx ID needed to reply
+  permissionType?: string; // e.g. "edit", "read", "bash"
+  permissionPatterns?: string[]; // affected file patterns
+  permissionMetadata?: Record<string, unknown>; // includes filepath, diff, etc.
 }
 
 /** A recoverable or fatal error occurred during generation */
@@ -226,7 +230,7 @@ export class OpencodeService {
       // Build provider config map from all configured providers
       const providerConfigMap: Record<string, object> = {};
       for (const p of this.settings.providers) {
-        if (!p.apiKey) continue;
+        if (!isProviderConfigured(p)) continue;
         providerConfigMap[p.id] = {
           models: Object.fromEntries(
             p.models.map((m) => [m.modelId, { name: m.modelId }]),
@@ -250,6 +254,7 @@ export class OpencodeService {
           provider: providerConfigMap,
           permission: {
             websearch: "allow",
+            edit: "ask"
           },
           agent: {
             build: {
@@ -320,14 +325,21 @@ export class OpencodeService {
   }
 
   /**
-   * List sessions under current vault directory scope
+   * List sessions under current vault directory scope.
+   * When limit is provided, returns the most recently updated N sessions.
    */
-  async listSessions(): Promise<Session[] | null> {
+  async listSessions(limit?: number): Promise<Session[] | null> {
     try {
       const response = await this.client.session.list({
         directory: this.vaultPath,
       });
-      return response.data ?? [];
+      const all = response.data ?? [];
+      if (limit !== undefined) {
+        return all
+          .sort((a, b) => b.time.updated - a.time.updated)
+          .slice(0, limit);
+      }
+      return all;
     } catch (error) {
       console.error("[OnyxMind] Failed to list sessions:", error);
       return null;
@@ -600,8 +612,8 @@ export class OpencodeService {
             } else if (part.type === PART_TYPE_TOOL) {
               const state = part.state;
 
-              // Track callID for question tools
-              if (part.tool === "question" && part.callID) {
+              // Track callID → partId for question and permission tools
+              if (part.callID) {
                 callIdToPartId.set(part.callID, part.id);
               }
 
@@ -657,6 +669,29 @@ export class OpencodeService {
                 tool: "question",
                 status: "running",
                 questionId: props.id,
+              };
+            }
+            break;
+          }
+
+          // ── Permission asked ──────────────────────────────────────────
+          case "permission.asked": {
+            const props = event.properties;
+            if (props.sessionID !== sessionId) break;
+
+            const callId = props.tool?.callID;
+            const partId = callId ? callIdToPartId.get(callId) : null;
+
+            if (partId) {
+              yield {
+                type: "tool_use",
+                partId,
+                tool: "permission",
+                status: "running",
+                permissionId: props.id,
+                permissionType: props.permission,
+                permissionPatterns: props.patterns,
+                permissionMetadata: props.metadata,
               };
             }
             break;
@@ -806,6 +841,22 @@ export class OpencodeService {
       return true;
     } catch (error) {
       console.error("[OnyxMind Error] Failed to reply to question:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Reply to a permission request
+   */
+  async replyToPermission(
+    requestId: string,
+    reply: "once" | "always" | "reject",
+  ): Promise<boolean> {
+    try {
+      await this.client.permission.reply({ requestID: requestId, reply });
+      return true;
+    } catch (error) {
+      console.error("[OnyxMind Error] Failed to reply to permission:", error);
       return false;
     }
   }

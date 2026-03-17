@@ -9,6 +9,7 @@
 
 import { spawn } from "child_process";
 import type { ServerOptions } from "@opencode-ai/sdk/v2/server";
+import { getEnhancedPath } from "./env";
 
 export type PatchedServerOptions = ServerOptions;
 
@@ -51,6 +52,7 @@ export async function createOpencodeServerPatched(
     signal: opts.signal,
     env: {
       ...process.env,
+      PATH: getEnhancedPath(),
       OPENCODE_CONFIG_CONTENT: JSON.stringify(opts.config ?? {}),
     },
   });

@@ -148,4 +148,14 @@ export class ChatService {
   ): Promise<boolean> {
     return this.sessionManager.replyToQuestion(questionId, answers);
   }
+
+  /**
+   * Reply to a permission request
+   */
+  async replyToPermission(
+    requestId: string,
+    reply: "once" | "always" | "reject",
+  ): Promise<boolean> {
+    return this.sessionManager.replyToPermission(requestId, reply);
+  }
 }

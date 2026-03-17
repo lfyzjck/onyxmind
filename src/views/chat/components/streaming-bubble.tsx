@@ -36,7 +36,7 @@ export function StreamingBubble(props: StreamingBubbleProps) {
           </details>
         )}
 
-        <ToolUseList tools={tools} />
+        <ToolUseList tools={tools} vaultPath={plugin.opencodeService.getVaultPath()} />
 
         <MarkdownBlock
           plugin={plugin}

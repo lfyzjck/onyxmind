@@ -6,6 +6,10 @@ import {
   CSS_CLASS_MESSAGE_HAS_THINKING,
   CSS_CLASS_PART_TEXT,
 } from "../constants";
+import {
+  messageHasThinkingLabel,
+  shouldShowHistoricalToolCalls,
+} from "../render-state";
 
 interface MessageBubbleProps {
   plugin: OnyxMindPlugin;
@@ -15,14 +19,11 @@ interface MessageBubbleProps {
 export function MessageBubble(props: MessageBubbleProps) {
   const { plugin, message } = props;
   const messageTools = message.tools ?? [];
-  const shouldShowToolCalls =
-    message.role === "assistant" &&
-    plugin.settings.showToolCallsAfterStreaming &&
-    messageTools.length > 0;
-  const hasThinkingLabel =
-    message.role === "assistant" &&
-    message.hasThinking &&
-    message.content.length > 0 === true;
+  const shouldShowToolCalls = shouldShowHistoricalToolCalls(
+    message,
+    plugin.settings.showToolCallsAfterStreaming,
+  );
+  const hasThinkingLabel = messageHasThinkingLabel(message);
   const containerClassName = [
     "onyxmind-message",
     `onyxmind-message-${message.role}`,

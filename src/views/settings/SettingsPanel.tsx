@@ -57,14 +57,31 @@ const PROVIDER_IDS: ProviderId[] = [
   "openai",
   "anthropic",
   "kimi",
+  "kimi-for-coding",
   "openrouter",
 ];
 
 function ProviderTab({ plugin }: { plugin: OnyxMindPlugin }) {
   const [selectedId, setSelectedId] = useState<ProviderId>("openai");
-  const [providers, setProviders] = useState<ProviderConfig[]>(
-    () => plugin.settings.providers,
-  );
+  const [providers, setProviders] = useState<ProviderConfig[]>(() => {
+    const existing = plugin.settings.providers ?? [];
+
+    // Ensure we always have a provider config for every known provider ID.
+    const merged: ProviderConfig[] = PROVIDER_IDS.map((id) => {
+      const found = existing.find((p) => p.id === id);
+      if (found) return found;
+
+      return {
+        id,
+        apiKey: "",
+        apiBase: "",
+        models: PROVIDER_META[id].defaultModels,
+      };
+    });
+
+    plugin.settings.providers = merged;
+    return merged;
+  });
   const [activeProviderId, setActiveProviderId] = useState<ProviderId>(
     () => plugin.settings.activeProviderId,
   );
@@ -73,7 +90,8 @@ function ProviderTab({ plugin }: { plugin: OnyxMindPlugin }) {
   );
 
   const getProvider = (id: ProviderId) =>
-    providers.find((p) => p.id === id) ?? plugin.settings.providers.find((p) => p.id === id)!;
+    providers.find((p) => p.id === id) ??
+    plugin.settings.providers.find((p) => p.id === id)!;
 
   const saveProviders = async (next: ProviderConfig[]) => {
     setProviders(next);
@@ -153,11 +171,7 @@ function ProviderTab({ plugin }: { plugin: OnyxMindPlugin }) {
                 <span
                   className={`onyxmind-sp-provider-dot${hasKey ? " has-key" : ""}${isActive ? " is-active" : ""}`}
                   title={
-                    isActive
-                      ? "Active"
-                      : hasKey
-                        ? "Configured"
-                        : "No API key"
+                    isActive ? "Active" : hasKey ? "Configured" : "No API key"
                   }
                 />
               </button>
@@ -269,8 +283,7 @@ function ProviderTab({ plugin }: { plugin: OnyxMindPlugin }) {
               onChange={(e) => {
                 const pid = e.target.value as ProviderId;
                 const first =
-                  providers.find((p) => p.id === pid)?.models[0]?.modelId ??
-                  "";
+                  providers.find((p) => p.id === pid)?.models[0]?.modelId ?? "";
                 void updateActiveModel(pid, first);
               }}
             >

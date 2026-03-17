@@ -1,14 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import createJiti from "jiti";
+import { loadTsModule } from "../helpers/load-ts.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const jiti = createJiti(__filename);
-const { stripCurrentNoteBlocks } = jiti(
-  path.resolve(__dirname, "../src/views/chat/current-note-sanitizer.ts"),
+const { stripCurrentNoteBlocks } = loadTsModule(
+  "src/views/chat/current-note-sanitizer.ts",
 );
 
 test("returns original content when current_note block does not exist", () => {
