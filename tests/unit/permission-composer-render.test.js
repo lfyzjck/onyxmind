@@ -49,14 +49,8 @@ test("PermissionComposer renders an active streaming permission", () => {
   assert.match(html, /aria-label="Permission request"/);
   assert.match(html, /Permission required:/);
   assert.match(html, /edit/);
-  assert.match(
-    html,
-    /default\/测试笔记\.md/,
-  );
-  assert.match(
-    html,
-    /Index: default\/测试笔记\.md/,
-  );
+  assert.match(html, /default\/测试笔记\.md/);
+  assert.match(html, /Index: default\/测试笔记\.md/);
   assert.match(html, /View diff/);
   assert.match(html, /Allow once/);
   assert.match(html, /Allow always/);

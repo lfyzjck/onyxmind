@@ -161,7 +161,9 @@ export function useChatController(
 
   const fetchCommands = useCallback(async (): Promise<AvailableCommand[]> => {
     const commands = (await plugin.opencodeService.listCommands()) ?? [];
-    return commands.filter((command) => !BLACKLIST_COMMANDS.includes(command.name));
+    return commands.filter(
+      (command) => !BLACKLIST_COMMANDS.includes(command.name),
+    );
   }, [plugin]);
 
   const {

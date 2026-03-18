@@ -36,7 +36,10 @@ interface ChatComposerProps {
   activeQuestion?: StreamChunkQuestion | null;
   onQuestionReply?: (questionId: string, answers: string[][]) => Promise<void>;
   activePermission?: StreamChunkPermission | null;
-  onPermissionReply?: (requestId: string, reply: PermissionReply) => Promise<void>;
+  onPermissionReply?: (
+    requestId: string,
+    reply: PermissionReply,
+  ) => Promise<void>;
   onInputChange: (value: string, cursor: number) => void;
   onInputClick: (value: string, cursor: number) => void;
   onInputKeyUp: (value: string, cursor: number, key: string) => void;

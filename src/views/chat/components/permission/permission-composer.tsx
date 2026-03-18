@@ -93,9 +93,15 @@ export function PermissionComposer({
       )}
 
       <div className="onyxmind-pc-footer">
-        <span className="onyxmind-pc-hint"><kbd className="onyxmind-kbd">Y</kbd> Allow once</span>
-        <span className="onyxmind-pc-hint"><kbd className="onyxmind-kbd">A</kbd> Allow always</span>
-        <span className="onyxmind-pc-hint"><kbd className="onyxmind-kbd">N</kbd> Deny</span>
+        <span className="onyxmind-pc-hint">
+          <kbd className="onyxmind-kbd">Y</kbd> Allow once
+        </span>
+        <span className="onyxmind-pc-hint">
+          <kbd className="onyxmind-kbd">A</kbd> Allow always
+        </span>
+        <span className="onyxmind-pc-hint">
+          <kbd className="onyxmind-kbd">N</kbd> Deny
+        </span>
         <div className="onyxmind-pc-actions">
           <button
             type="button"

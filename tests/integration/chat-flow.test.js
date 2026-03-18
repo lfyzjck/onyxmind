@@ -173,10 +173,7 @@ test("chat flow keeps user and assistant messages in the migrated remote session
       (tool) => tool.tool === "permission",
     ) ?? null;
   assert.ok(permissionTool);
-  assert.equal(
-    permissionTool?.permissionId,
-    "per_cfb1997b9001lAa9fxmJ1XtBgl",
-  );
+  assert.equal(permissionTool?.permissionId, "per_cfb1997b9001lAa9fxmJ1XtBgl");
   assert.deepEqual(permissionTool?.permissionPatterns, ["default/测试笔记.md"]);
   assert.equal(
     permissionTool?.permissionMetadata?.filepath,

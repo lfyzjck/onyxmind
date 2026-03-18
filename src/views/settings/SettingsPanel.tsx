@@ -549,9 +549,7 @@ function PathListEditor({
         type="text"
         className="onyxmind-sp-path-inline-input"
         value={input}
-        placeholder={
-          paths.length === 0 ? (placeholder ?? "e.g. Journal/") : ""
-        }
+        placeholder={paths.length === 0 ? (placeholder ?? "e.g. Journal/") : ""}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -571,7 +569,10 @@ function PermissionTab({ plugin }: { plugin: OnyxMindPlugin }) {
   const perm = plugin.settings.permissions;
 
   const savePerm = async (updates: Partial<PermissionConfig>) => {
-    plugin.settings.permissions = { ...plugin.settings.permissions, ...updates };
+    plugin.settings.permissions = {
+      ...plugin.settings.permissions,
+      ...updates,
+    };
     await plugin.saveSettings();
   };
 

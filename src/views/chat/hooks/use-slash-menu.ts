@@ -136,9 +136,7 @@ export function useSlashMenu({
       if (event.key === "ArrowDown") {
         event.preventDefault();
         if (filteredCommands.length > 0) {
-          setSlashSelectedIndex(
-            (prev) => (prev + 1) % filteredCommands.length,
-          );
+          setSlashSelectedIndex((prev) => (prev + 1) % filteredCommands.length);
         }
         return true;
       }
