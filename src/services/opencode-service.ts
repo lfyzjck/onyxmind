@@ -125,6 +125,13 @@ export interface StreamChunkToolUse {
   title?: string; // running / completed
   output?: string; // completed
   error?: string; // error
+  // Question tool fields (present when tool === "question")
+  questionId?: string;
+  // Permission tool fields (present when tool === "permission")
+  permissionId?: string;
+  permissionType?: string;
+  permissionPatterns?: string[];
+  permissionMetadata?: Record<string, unknown>;
 }
 
 export interface QuestionOption {

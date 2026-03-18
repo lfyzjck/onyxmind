@@ -1,20 +1,17 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { loadTsModule } from "../helpers/load-ts.js";
+import { test, expect } from "vitest";
+import { ChatService } from "../../src/services/chat-service";
 
-const { ChatService } = loadTsModule("src/services/chat-service.ts");
-
-async function* createStream(chunks) {
+async function* createStream(chunks: object[]) {
   for (const chunk of chunks) {
     yield chunk;
   }
 }
 
 test("streamAssistantResponse aggregates content and merges tool updates before persisting", async () => {
-  const addedMessages = [];
-  const sentPrompts = [];
+  const addedMessages: { sessionId: string; message: object }[] = [];
+  const sentPrompts: { sessionId: string; prompt: string }[] = [];
   const sessionManager = {
-    async sendPrompt(sessionId, prompt) {
+    async sendPrompt(sessionId: string, prompt: string) {
       sentPrompts.push({ sessionId, prompt });
       return createStream([
         { type: "thinking", text: "Reasoning" },
@@ -39,40 +36,40 @@ test("streamAssistantResponse aggregates content and merges tool updates before 
         { type: "content", text: " world" },
       ]);
     },
-    addMessage(sessionId, message) {
+    addMessage(sessionId: string, message: object) {
       addedMessages.push({ sessionId, message });
     },
   };
 
-  const service = new ChatService(sessionManager);
+  const service = new ChatService(sessionManager as never);
   const seen = {
-    content: [],
-    thinking: [],
-    tools: [],
+    content: [] as string[],
+    thinking: [] as string[],
+    tools: [] as object[],
   };
 
   const message = await service.streamAssistantResponse(
-    { id: "session-1" },
+    { id: "session-1" } as never,
     "hi",
     {
-      onContentDelta: async (text) => {
+      onContentDelta: async (text: string) => {
         seen.content.push(text);
       },
-      onThinkingDelta: (text) => {
+      onThinkingDelta: (text: string) => {
         seen.thinking.push(text);
       },
-      onToolUse: (chunk) => {
+      onToolUse: (chunk: object) => {
         seen.tools.push(chunk);
       },
     },
   );
 
-  assert.deepEqual(sentPrompts, [{ sessionId: "session-1", prompt: "hi" }]);
-  assert.deepEqual(seen.content, ["Hello", " world"]);
-  assert.deepEqual(seen.thinking, ["Reasoning"]);
-  assert.equal(seen.tools.length, 2);
-  assert.equal(message?.content, "Hello world");
-  assert.deepEqual(message?.tools, [
+  expect(sentPrompts).toEqual([{ sessionId: "session-1", prompt: "hi" }]);
+  expect(seen.content).toEqual(["Hello", " world"]);
+  expect(seen.thinking).toEqual(["Reasoning"]);
+  expect(seen.tools.length).toBe(2);
+  expect(message?.content).toBe("Hello world");
+  expect(message?.tools).toEqual([
     {
       type: "tool_use",
       partId: "tool-1",
@@ -85,13 +82,13 @@ test("streamAssistantResponse aggregates content and merges tool updates before 
       output: "A",
     },
   ]);
-  assert.equal(addedMessages.length, 1);
-  assert.equal(addedMessages[0].message.role, "assistant");
+  expect(addedMessages.length).toBe(1);
+  expect((addedMessages[0].message as { role: string }).role).toBe("assistant");
 });
 
 test("streamAssistantResponse surfaces chunk errors but still persists the final assistant text", async () => {
-  const errors = [];
-  const addedMessages = [];
+  const errors: string[] = [];
+  const addedMessages: object[] = [];
   const service = new ChatService({
     async sendPrompt() {
       return createStream([
@@ -99,24 +96,24 @@ test("streamAssistantResponse surfaces chunk errors but still persists the final
         { type: "content", text: "Recovered" },
       ]);
     },
-    addMessage(_sessionId, message) {
+    addMessage(_sessionId: string, message: object) {
       addedMessages.push(message);
     },
-  });
+  } as never);
 
   const message = await service.streamAssistantResponse(
-    { id: "session-2" },
+    { id: "session-2" } as never,
     "prompt",
     {
-      onError: (error) => {
+      onError: (error: string) => {
         errors.push(error);
       },
     },
   );
 
-  assert.deepEqual(errors, ["Transient tool error"]);
-  assert.equal(message?.content, "Recovered");
-  assert.equal(addedMessages.length, 1);
+  expect(errors).toEqual(["Transient tool error"]);
+  expect(message?.content).toBe("Recovered");
+  expect(addedMessages.length).toBe(1);
 });
 
 test("streamAssistantResponse returns null and does not persist when aborted before text is complete", async () => {
@@ -132,10 +129,10 @@ test("streamAssistantResponse returns null and does not persist when aborted bef
     addMessage() {
       added = true;
     },
-  });
+  } as never);
 
   const message = await service.streamAssistantResponse(
-    { id: "session-3" },
+    { id: "session-3" } as never,
     "prompt",
     {
       onContentDelta: async () => {
@@ -145,6 +142,6 @@ test("streamAssistantResponse returns null and does not persist when aborted bef
     { signal: controller.signal },
   );
 
-  assert.equal(message, null);
-  assert.equal(added, false);
+  expect(message).toBeNull();
+  expect(added).toBe(false);
 });

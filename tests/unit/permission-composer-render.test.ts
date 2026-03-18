@@ -1,23 +1,18 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { loadTsModule } from "../helpers/load-ts.js";
-
-const { PermissionComposer } = loadTsModule(
-  "src/views/chat/components/permission-composer.tsx",
-);
-const { getActivePermission } = loadTsModule("src/views/chat/render-state.ts");
+import { PermissionComposer } from "../../src/views/chat/components/permission/permission-composer";
+import { getActivePermission } from "../../src/views/chat/render-state";
 
 async function noopAsync() {}
 
 test("PermissionComposer renders an active streaming permission", () => {
   const activePermission = getActivePermission([
     {
-      type: "tool_use",
+      type: "tool_use" as const,
       partId: "tool_RfA5gb2yXtJbtfImHq7V5ELk",
       tool: "permission",
-      status: "running",
+      status: "running" as const,
       permissionId: "per_cfb1997b9001lAa9fxmJ1XtBgl",
       permissionType: "edit",
       permissionPatterns: ["default/测试笔记.md"],
@@ -37,22 +32,22 @@ test("PermissionComposer renders an active streaming permission", () => {
     },
   ]);
 
-  assert.ok(activePermission);
+  expect(activePermission).toBeTruthy();
 
   const html = renderToStaticMarkup(
     createElement(PermissionComposer, {
-      permission: activePermission,
+      permission: activePermission!,
       onReply: noopAsync,
     }),
   );
 
-  assert.match(html, /aria-label="Permission request"/);
-  assert.match(html, /Permission required:/);
-  assert.match(html, /edit/);
-  assert.match(html, /default\/测试笔记\.md/);
-  assert.match(html, /Index: default\/测试笔记\.md/);
-  assert.match(html, /View diff/);
-  assert.match(html, /Allow once/);
-  assert.match(html, /Allow always/);
-  assert.match(html, /Deny/);
+  expect(html).toMatch(/aria-label="Permission request"/);
+  expect(html).toMatch(/Permission required:/);
+  expect(html).toMatch(/edit/);
+  expect(html).toMatch(/default\/测试笔记\.md/);
+  expect(html).toMatch(/Index: default\/测试笔记\.md/);
+  expect(html).toMatch(/View diff/);
+  expect(html).toMatch(/Allow once/);
+  expect(html).toMatch(/Allow always/);
+  expect(html).toMatch(/Deny/);
 });

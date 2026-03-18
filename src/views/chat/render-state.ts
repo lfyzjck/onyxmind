@@ -4,6 +4,31 @@ import type {
 } from "../../services/opencode-service";
 import type { ToolCardMap } from "./types";
 
+export function getActiveQuestion(
+  tools: StreamChunkToolUse[],
+): StreamChunkToolUse | null {
+  return (
+    tools.find(
+      (t) => t.tool === "question" && t.status === "running" && t.questionId,
+    ) ?? null
+  );
+}
+
+export function hasActiveQuestion(tools: StreamChunkToolUse[]): boolean {
+  return getActiveQuestion(tools) !== null;
+}
+
+export function getActivePermission(
+  tools: StreamChunkToolUse[],
+): StreamChunkToolUse | null {
+  return (
+    tools.find(
+      (t) =>
+        t.tool === "permission" && t.status === "running" && t.permissionId,
+    ) ?? null
+  );
+}
+
 export function mergeToolChunkMap(
   previous: ToolCardMap,
   chunk: StreamChunkToolUse,
