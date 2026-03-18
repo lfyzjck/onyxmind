@@ -168,9 +168,7 @@ test("chat flow keeps user and assistant messages in the migrated remote session
       (tool) => tool.tool === "permission",
     ) ?? null;
   expect(permissionTool).toBeTruthy();
-  expect(permissionTool?.permissionId).toBe(
-    "per_cfb1997b9001lAa9fxmJ1XtBgl",
-  );
+  expect(permissionTool?.permissionId).toBe("per_cfb1997b9001lAa9fxmJ1XtBgl");
   expect(permissionTool?.permissionPatterns).toEqual(["default/测试笔记.md"]);
   expect(permissionTool?.permissionMetadata?.filepath).toBe(
     "default/测试笔记.md",
