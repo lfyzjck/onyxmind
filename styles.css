@@ -1678,6 +1678,9 @@ code .onyxmind-file-link:hover {
   gap: 8px;
   padding: 10px 12px;
   outline: none;
+  border: 1px solid rgba(218, 132, 87, 0.28);
+  border-radius: 8px;
+  background: rgba(218, 132, 87, 0.05);
 }
 
 .onyxmind-pc-header {
@@ -1710,18 +1713,42 @@ code .onyxmind-file-link:hover {
 
 .onyxmind-pc-patterns {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
 }
 
 .onyxmind-pc-pattern {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   font-family: var(--font-monospace);
   background: var(--onyxmind-bg-panel);
   border: 1px solid var(--onyxmind-line);
+  border-left: 2px solid rgba(218, 132, 87, 0.5);
   border-radius: 3px;
-  padding: 1px 5px;
+  padding: 3px 8px;
   color: var(--onyxmind-subtle);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.onyxmind-pc-pattern-icon {
+  flex-shrink: 0;
+  color: rgba(218, 132, 87, 0.8);
+}
+
+.onyxmind-pc-pattern-icon svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.onyxmind-pc-pattern-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .onyxmind-pc-diff {
@@ -1758,6 +1785,26 @@ code .onyxmind-file-link:hover {
 .onyxmind-pc-hint {
   font-size: 10px;
   color: var(--onyxmind-faint);
+}
+
+.onyxmind-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 15px;
+  padding: 0 3px;
+  font-family: var(--font-monospace);
+  font-size: 9px;
+  font-weight: 600;
+  font-style: normal;
+  color: var(--onyxmind-muted);
+  background: var(--onyxmind-bg-panel);
+  border: 1px solid var(--onyxmind-line);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .onyxmind-pc-actions {
@@ -2200,4 +2247,87 @@ code .onyxmind-file-link:hover {
   font-size: 10px;
   color: var(--text-faint);
   font-family: var(--font-interface);
+}
+
+/* ── Permission tab ───────────────────────────────────────────────────────── */
+
+.onyxmind-sp-section {
+  padding: 7px 16px 6px;
+  font-size: var(--font-ui-smaller);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.onyxmind-sp-row--block {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.onyxmind-sp-row--block .onyxmind-sp-row-ctrl {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.onyxmind-sp-path-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-modifier-form-field);
+  min-height: 32px;
+  align-items: center;
+  cursor: text;
+}
+
+.onyxmind-sp-path-field:focus-within {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb, 139 125 255) / 0.2);
+}
+
+.onyxmind-sp-path-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 5px 1px 7px;
+  border-radius: 3px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-size: var(--font-ui-smaller);
+  font-family: var(--font-monospace);
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+.onyxmind-sp-path-tag-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-on-accent);
+  opacity: 0.65;
+  font-size: 10px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.onyxmind-sp-path-tag-remove:hover {
+  opacity: 1;
+}
+
+.onyxmind-sp-path-inline-input {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  background: transparent;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  outline: none;
+  padding: 0;
 }

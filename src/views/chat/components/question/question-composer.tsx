@@ -1,30 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import type { StreamChunkToolUse } from "../../../services/opencode-service";
-import { ObsidianIcon } from "./tools/shared";
-
-interface QuestionOption {
-  label: string;
-}
-
-interface QuestionInfo {
-  question: string;
-  header?: string;
-  options: QuestionOption[];
-  multiSelect?: boolean;
-}
+import type { StreamChunkQuestion } from "../../../../services/opencode-service";
+import { ObsidianIcon } from "../tools/shared";
 
 interface QuestionComposerProps {
-  question: StreamChunkToolUse;
+  question: StreamChunkQuestion;
   onReply: (questionId: string, answers: string[][]) => Promise<void>;
 }
 
 export function QuestionComposer({ question, onReply }: QuestionComposerProps) {
-  const rawQuestions = question.input?.["questions"];
-  const questions: QuestionInfo[] = Array.isArray(rawQuestions)
-    ? (rawQuestions as QuestionInfo[])
-    : [];
-
+  const questions = question.questions;
   const questionId = question.questionId;
   const containerRef = useRef<HTMLDivElement>(null);
 

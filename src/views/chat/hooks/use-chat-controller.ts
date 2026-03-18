@@ -12,6 +12,9 @@ import type OnyxMindPlugin from "../../../main";
 import type {
   AvailableCommand,
   Message,
+  PermissionReply,
+  StreamChunkPermission,
+  StreamChunkQuestion,
   StreamChunkToolUse,
 } from "../../../services/opencode-service";
 import type {
@@ -24,14 +27,9 @@ import {
   type ProviderId,
   type ProviderConfig,
 } from "../../../settings";
-import {
-  getActivePermission,
-  getActiveQuestion,
-  getToolChunks,
-  mergeToolChunkMap,
-} from "../render-state";
-import { findSlashMatch } from "../slash";
+import { getToolChunks, mergeToolChunkMap } from "../render-state";
 import type { ToolCardMap } from "../types";
+import { useSlashMenu } from "./use-slash-menu";
 
 interface UseChatControllerResult {
   messagesRef: RefObject<HTMLDivElement | null>;
@@ -45,8 +43,8 @@ interface UseChatControllerResult {
   streamText: string;
   streamThinking: string;
   toolChunks: StreamChunkToolUse[];
-  activeQuestion: StreamChunkToolUse | null;
-  activePermission: StreamChunkToolUse | null;
+  activeQuestion: StreamChunkQuestion | null;
+  activePermission: StreamChunkPermission | null;
   errors: string[];
   slashMenuOpen: boolean;
   filteredCommands: AvailableCommand[];
@@ -85,7 +83,7 @@ interface UseChatControllerResult {
   ) => Promise<void>;
   handlePermissionReply: (
     requestId: string,
-    reply: "once" | "always" | "reject",
+    reply: PermissionReply,
   ) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   noteChipPath: string | null;
@@ -94,6 +92,8 @@ interface UseChatControllerResult {
 }
 
 const ABORT_ERROR_NAME = "MessageAbortedError";
+// command that not show in chat composer
+const BLACKLIST_COMMANDS = ["init", "review"];
 
 export function useChatController(
   plugin: OnyxMindPlugin,
@@ -120,17 +120,16 @@ export function useChatController(
   );
   const [attachedNotePath, setAttachedNotePath] = useState<string | null>(null);
   const [inputText, setInputText] = useState("");
-  const [commands, setCommands] = useState<AvailableCommand[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [streamThinking, setStreamThinking] = useState("");
   const [streamTools, setStreamTools] = useState<ToolCardMap>({});
+  const [activeQuestion, setActiveQuestion] =
+    useState<StreamChunkQuestion | null>(null);
+  const [activePermission, setActivePermission] =
+    useState<StreamChunkPermission | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
-  const [slashStart, setSlashStart] = useState<number | null>(null);
-  const [slashEnd, setSlashEnd] = useState<number | null>(null);
-  const [slashQuery, setSlashQuery] = useState("");
-  const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
   const [historySessions, setHistorySessions] = useState<OnyxMindSession[]>([]);
   const [historySelectedIndex, setHistorySelectedIndex] = useState(0);
@@ -159,85 +158,41 @@ export function useChatController(
   }, [plugin, sessions.length]);
 
   const toolChunks = useMemo(() => getToolChunks(streamTools), [streamTools]);
-  const activeQuestion = useMemo(
-    () => getActiveQuestion(toolChunks),
-    [toolChunks],
-  );
-  const activePermission = useMemo(
-    () => getActivePermission(toolChunks),
-    [toolChunks],
-  );
-  const slashMenuOpen = slashStart !== null && !isStreaming;
 
-  const filteredCommands = useMemo((): AvailableCommand[] => {
-    if (slashStart === null) {
-      return [];
-    }
+  const fetchCommands = useCallback(async (): Promise<AvailableCommand[]> => {
+    const commands = (await plugin.opencodeService.listCommands()) ?? [];
+    return commands.filter((command) => !BLACKLIST_COMMANDS.includes(command.name));
+  }, [plugin]);
 
-    const query = slashQuery.trim().toLowerCase();
-    if (!query) {
-      return commands;
-    }
-
-    const startsWith: AvailableCommand[] = [];
-    const contains: AvailableCommand[] = [];
-
-    for (const command of commands) {
-      const name = command.name.toLowerCase();
-      const description = command.description.toLowerCase();
-      if (!name.includes(query) && !description.includes(query)) {
-        continue;
-      }
-      if (name.startsWith(query)) {
-        startsWith.push(command);
-      } else {
-        contains.push(command);
-      }
-    }
-
-    return [...startsWith, ...contains];
-  }, [commands, slashQuery, slashStart]);
+  const {
+    slashMenuOpen,
+    filteredCommands,
+    slashSelectedIndex,
+    setSlashSelectedIndex,
+    updateSlashState,
+    closeSlashMenu,
+    applySlashCommand,
+    handleSlashKeyDown,
+  } = useSlashMenu({
+    inputRef,
+    inputText,
+    setInputText,
+    isStreaming,
+    isComposing,
+    fetchCommands,
+  });
 
   const appendError = useCallback((message: string) => {
     setErrors((prev) => [...prev, message]);
     console.error("[OnyxMind Error]:", message);
   }, []);
 
-  const closeSlashMenu = useCallback(() => {
-    setSlashStart(null);
-    setSlashEnd(null);
-    setSlashQuery("");
-    setSlashSelectedIndex(0);
-  }, []);
-
-  const refreshCommands = useCallback(async (): Promise<void> => {
-    const available = await plugin.opencodeService.listCommands();
-    if (!available) {
-      return;
-    }
-    setCommands(available);
-  }, [plugin]);
-
-  const updateSlashState = useCallback(
-    (text: string, cursor: number): void => {
-      const match = findSlashMatch(text, cursor);
-      if (!match) {
-        closeSlashMenu();
-        return;
-      }
-
-      setSlashStart(match.start);
-      setSlashEnd(match.end);
-      setSlashQuery(match.query);
-      setSlashSelectedIndex(0);
-    },
-    [closeSlashMenu],
-  );
-
   const resetStreamingState = useCallback(() => {
     setStreamText("");
     setStreamThinking("");
     setStreamTools({});
+    setActiveQuestion(null);
+    setActivePermission(null);
   }, []);
 
   const refreshSessionState = useCallback(
@@ -291,6 +246,7 @@ export function useChatController(
 
   const handleQuestionReply = useCallback(
     async (questionId: string, answers: string[][]): Promise<void> => {
+      setActiveQuestion(null);
       const success = await plugin.chatService.replyToQuestion(
         questionId,
         answers,
@@ -303,10 +259,8 @@ export function useChatController(
   );
 
   const handlePermissionReply = useCallback(
-    async (
-      requestId: string,
-      reply: "once" | "always" | "reject",
-    ): Promise<void> => {
+    async (requestId: string, reply: PermissionReply): Promise<void> => {
+      setActivePermission(null);
       const success = await plugin.chatService.replyToPermission(
         requestId,
         reply,
@@ -316,35 +270,6 @@ export function useChatController(
       }
     },
     [appendError, plugin],
-  );
-
-  const applySlashCommand = useCallback(
-    (command: AvailableCommand): void => {
-      if (slashStart === null) {
-        return;
-      }
-
-      const replaceEnd =
-        slashEnd ?? inputRef.current?.selectionStart ?? inputText.length;
-      const prefix = inputText.slice(0, slashStart);
-      const suffix = inputText.slice(replaceEnd);
-      const insertion = `/${command.name} `;
-      const nextText = `${prefix}${insertion}${suffix}`;
-      const nextCursor = prefix.length + insertion.length;
-
-      setInputText(nextText);
-      closeSlashMenu();
-
-      requestAnimationFrame(() => {
-        const input = inputRef.current;
-        if (!input) {
-          return;
-        }
-        input.focus();
-        input.setSelectionRange(nextCursor, nextCursor);
-      });
-    },
-    [closeSlashMenu, inputText, slashEnd, slashStart],
   );
 
   const sendMessage = useCallback(
@@ -404,6 +329,12 @@ export function useChatController(
             },
             onToolUse: (chunk) => {
               setStreamTools((prev) => mergeToolChunkMap(prev, chunk));
+            },
+            onQuestion: (chunk) => {
+              setActiveQuestion(chunk);
+            },
+            onPermission: (chunk) => {
+              setActivePermission(chunk);
             },
             onError: (error) => {
               const isAbortError =
@@ -515,8 +446,8 @@ export function useChatController(
       return;
     }
 
-    await Promise.all([refreshSessionState(true, true), refreshCommands()]);
-  }, [isStreaming, refreshCommands, refreshSessionState]);
+    await refreshSessionState(true, true);
+  }, [isStreaming, refreshSessionState]);
 
   const handleSwitchSession = useCallback(
     (sessionId: string): void => {
@@ -634,48 +565,8 @@ export function useChatController(
 
   const handleInputKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (slashMenuOpen) {
-        if (event.key === "ArrowDown") {
-          event.preventDefault();
-          if (filteredCommands.length > 0) {
-            setSlashSelectedIndex(
-              (prev) => (prev + 1) % filteredCommands.length,
-            );
-          }
-          return;
-        }
-
-        if (event.key === "ArrowUp") {
-          event.preventDefault();
-          if (filteredCommands.length > 0) {
-            setSlashSelectedIndex(
-              (prev) =>
-                (prev - 1 + filteredCommands.length) % filteredCommands.length,
-            );
-          }
-          return;
-        }
-
-        if (
-          (event.key === "Enter" || event.key === "Tab") &&
-          !event.shiftKey &&
-          !isComposing
-        ) {
-          if (filteredCommands.length > 0) {
-            event.preventDefault();
-            const selected = filteredCommands[slashSelectedIndex];
-            if (selected) {
-              applySlashCommand(selected);
-            }
-            return;
-          }
-        }
-
-        if (event.key === "Escape") {
-          event.preventDefault();
-          closeSlashMenu();
-          return;
-        }
+      if (handleSlashKeyDown(event)) {
+        return;
       }
 
       if (event.key === "Enter" && !event.shiftKey && !isComposing) {
@@ -683,22 +574,14 @@ export function useChatController(
         void handleSubmit();
       }
     },
-    [
-      applySlashCommand,
-      closeSlashMenu,
-      filteredCommands,
-      handleSubmit,
-      isComposing,
-      slashMenuOpen,
-      slashSelectedIndex,
-    ],
+    [handleSlashKeyDown, handleSubmit, isComposing],
   );
 
   useEffect(() => {
     let isDisposed = false;
 
     const init = async (): Promise<void> => {
-      await Promise.all([refreshSessionState(true, true), refreshCommands()]);
+      await refreshSessionState(true, true);
       if (isDisposed) {
         return;
       }
@@ -718,7 +601,7 @@ export function useChatController(
         }
       }
     };
-  }, [plugin, refreshCommands, refreshSessionState]);
+  }, [plugin, refreshSessionState]);
 
   useEffect(() => {
     activeSessionIdRef.current = activeSessionId;
@@ -747,35 +630,6 @@ export function useChatController(
       plugin.app.workspace.offref(ref);
     };
   }, [plugin]);
-
-  useEffect(() => {
-    if (!slashMenuOpen) {
-      return;
-    }
-    if (commands.length > 0) {
-      return;
-    }
-    void refreshCommands();
-  }, [commands.length, slashMenuOpen, refreshCommands]);
-
-  useEffect(() => {
-    if (!slashMenuOpen) {
-      return;
-    }
-    setSlashSelectedIndex((prev) => {
-      if (filteredCommands.length === 0) {
-        return 0;
-      }
-      return Math.min(prev, filteredCommands.length - 1);
-    });
-  }, [filteredCommands.length, slashMenuOpen]);
-
-  useEffect(() => {
-    if (!isStreaming) {
-      return;
-    }
-    closeSlashMenu();
-  }, [closeSlashMenu, isStreaming]);
 
   useEffect(() => {
     const input = inputRef.current;

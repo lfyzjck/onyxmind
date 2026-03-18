@@ -27,6 +27,7 @@ export function ChatViewApp(props: ChatViewAppProps) {
         streamText={controller.streamText}
         streamThinking={controller.streamThinking}
         streamTools={controller.toolChunks}
+        hasActiveQuestion={controller.activeQuestion !== null}
         onQuestionReply={controller.handleQuestionReply}
         onSelectCapability={(prompt) => void controller.sendMessage(prompt)}
         errors={controller.errors}

@@ -19,36 +19,6 @@ export function getToolChunks(toolMap: ToolCardMap): StreamChunkToolUse[] {
   return Object.values(toolMap);
 }
 
-export function getActiveQuestion(
-  tools: StreamChunkToolUse[],
-): StreamChunkToolUse | null {
-  return (
-    tools.find(
-      (tool) =>
-        tool.tool === "question" &&
-        tool.status === "running" &&
-        tool.questionId,
-    ) ?? null
-  );
-}
-
-export function hasActiveQuestion(tools: StreamChunkToolUse[]): boolean {
-  return getActiveQuestion(tools) !== null;
-}
-
-export function getActivePermission(
-  tools: StreamChunkToolUse[],
-): StreamChunkToolUse | null {
-  return (
-    tools.find(
-      (tool) =>
-        tool.tool === "permission" &&
-        tool.status === "running" &&
-        tool.permissionId,
-    ) ?? null
-  );
-}
-
 export function shouldShowHistoricalToolCalls(
   message: Message,
   showToolCallsAfterStreaming: boolean,

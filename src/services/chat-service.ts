@@ -3,7 +3,13 @@
  * Handles message interactions for a specific session
  */
 
-import type { Message, StreamChunkToolUse } from "./opencode-service";
+import type {
+  Message,
+  PermissionReply,
+  StreamChunkPermission,
+  StreamChunkQuestion,
+  StreamChunkToolUse,
+} from "./opencode-service";
 import type {
   CreateSessionResult,
   OnyxMindSession,
@@ -14,6 +20,8 @@ export interface StreamResponseHandlers {
   onContentDelta?: (text: string) => void | Promise<void>;
   onThinkingDelta?: (text: string) => void;
   onToolUse?: (chunk: StreamChunkToolUse) => void;
+  onQuestion?: (chunk: StreamChunkQuestion) => void;
+  onPermission?: (chunk: StreamChunkPermission) => void;
   onError?: (error: string) => void;
 }
 
@@ -103,6 +111,10 @@ export class ChatService {
             previous ? { ...previous, ...chunk } : chunk,
           );
           handlers.onToolUse?.(chunk);
+        } else if (chunk.type === "question") {
+          handlers.onQuestion?.(chunk);
+        } else if (chunk.type === "permission") {
+          handlers.onPermission?.(chunk);
         } else if (chunk.type === "error") {
           handlers.onError?.(chunk.error || "Unknown error");
         }
@@ -154,7 +166,7 @@ export class ChatService {
    */
   async replyToPermission(
     requestId: string,
-    reply: "once" | "always" | "reject",
+    reply: PermissionReply,
   ): Promise<boolean> {
     return this.sessionManager.replyToPermission(requestId, reply);
   }

@@ -101,6 +101,8 @@ export interface AvailableCommand {
   template: string;
 }
 
+export type PermissionReply = "once" | "always" | "reject";
+
 /** Incremental text content from the assistant */
 export interface StreamChunkContent {
   type: "content";
@@ -123,11 +125,33 @@ export interface StreamChunkToolUse {
   title?: string; // running / completed
   output?: string; // completed
   error?: string; // error
-  questionId?: string; // for question tools: the que_xxx ID needed to reply
-  permissionId?: string; // for permission requests: the per_xxx ID needed to reply
-  permissionType?: string; // e.g. "edit", "read", "bash"
-  permissionPatterns?: string[]; // affected file patterns
-  permissionMetadata?: Record<string, unknown>; // includes filepath, diff, etc.
+}
+
+export interface QuestionOption {
+  label: string;
+}
+
+export interface QuestionInfo {
+  question: string;
+  header?: string;
+  options: QuestionOption[];
+  multiSelect?: boolean;
+}
+
+/** Interactive question asked by the assistant (not a tool_use) */
+export interface StreamChunkQuestion {
+  type: "question";
+  questionId: string;
+  questions: QuestionInfo[];
+}
+
+/** Permission request from the assistant (not a tool_use) */
+export interface StreamChunkPermission {
+  type: "permission";
+  permissionId: string;
+  permissionType: string;
+  permissionPatterns: string[];
+  permissionMetadata: Record<string, unknown>;
 }
 
 /** A recoverable or fatal error occurred during generation */
@@ -140,12 +164,13 @@ export type StreamChunk =
   | StreamChunkContent
   | StreamChunkThinking
   | StreamChunkToolUse
+  | StreamChunkQuestion
+  | StreamChunkPermission
   | StreamChunkError;
 
 export class OpencodeService {
   private _client: OpencodeClient | null = null;
   private settings: OnyxMindSettings;
-  private app: App;
   private server: OpencodeServerInstance | null = null;
   private abortController: AbortController | null = null;
   private vaultPath: string;
@@ -158,7 +183,6 @@ export class OpencodeService {
   }
 
   constructor(app: App, settings: OnyxMindSettings) {
-    this.app = app;
     this.settings = settings;
     this.vaultPath = getVaultBasePath(app);
     console.debug(
@@ -255,6 +279,7 @@ export class OpencodeService {
           permission: {
             websearch: "allow",
             edit: "ask",
+            read: "ask",
           },
           agent: {
             build: {
@@ -569,8 +594,6 @@ export class OpencodeService {
       let isIdle = false;
       // Track the current assistant message so we only emit parts that belong to it.
       let assistantMessageId: string | null = null;
-      // Track callID → partId mapping for question tools
-      const callIdToPartId = new Map<string, string>();
 
       for await (const event of events.stream) {
         switch (event.type) {
@@ -612,11 +635,6 @@ export class OpencodeService {
             } else if (part.type === PART_TYPE_TOOL) {
               const state = part.state;
 
-              // Track callID → partId for question and permission tools
-              if (part.callID) {
-                callIdToPartId.set(part.callID, part.id);
-              }
-
               const chunk: StreamChunkToolUse = {
                 type: "tool_use",
                 partId: part.id,
@@ -657,20 +675,11 @@ export class OpencodeService {
             const props = event.properties;
             if (props.sessionID !== sessionId) break;
 
-            // Find the corresponding tool part via callID
-            const callId = props.tool?.callID;
-            const partId = callId ? callIdToPartId.get(callId) : null;
-
-            if (partId) {
-              // Emit an update to the existing tool chunk with questionId
-              yield {
-                type: "tool_use",
-                partId,
-                tool: "question",
-                status: "running",
-                questionId: props.id,
-              };
-            }
+            yield {
+              type: "question",
+              questionId: props.id,
+              questions: props.questions ?? [],
+            };
             break;
           }
 
@@ -679,21 +688,13 @@ export class OpencodeService {
             const props = event.properties;
             if (props.sessionID !== sessionId) break;
 
-            const callId = props.tool?.callID;
-            const partId = callId ? callIdToPartId.get(callId) : null;
-
-            if (partId) {
-              yield {
-                type: "tool_use",
-                partId,
-                tool: "permission",
-                status: "running",
-                permissionId: props.id,
-                permissionType: props.permission,
-                permissionPatterns: props.patterns,
-                permissionMetadata: props.metadata,
-              };
-            }
+            yield {
+              type: "permission",
+              permissionId: props.id,
+              permissionType: props.permission ?? "unknown",
+              permissionPatterns: props.patterns ?? [],
+              permissionMetadata: props.metadata ?? {},
+            };
             break;
           }
 
@@ -850,7 +851,7 @@ export class OpencodeService {
    */
   async replyToPermission(
     requestId: string,
-    reply: "once" | "always" | "reject",
+    reply: PermissionReply,
   ): Promise<boolean> {
     try {
       await this.client.permission.reply({ requestID: requestId, reply });
@@ -871,6 +872,8 @@ export class OpencodeService {
       const response = await this.client.session.summarize({
         sessionID: sessionId,
         directory: this.vaultPath,
+        providerID: this.settings.activeProviderId,
+        modelID: this.settings.activeModelId,
       });
 
       if (!response.data) {

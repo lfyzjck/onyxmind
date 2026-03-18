@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import type { StreamChunkToolUse } from "../../../services/opencode-service";
-import { ObsidianIcon } from "./tools/shared";
+import type {
+  PermissionReply,
+  StreamChunkPermission,
+} from "../../../../services/opencode-service";
+import { ObsidianIcon } from "../tools/shared";
 
 interface PermissionComposerProps {
-  permission: StreamChunkToolUse;
-  onReply: (
-    requestId: string,
-    reply: "once" | "always" | "reject",
-  ) => Promise<void>;
+  permission: StreamChunkPermission;
+  onReply: (requestId: string, reply: PermissionReply) => Promise<void>;
 }
 
 export function PermissionComposer({
@@ -16,9 +16,9 @@ export function PermissionComposer({
   onReply,
 }: PermissionComposerProps) {
   const requestId = permission.permissionId;
-  const permType = permission.permissionType ?? "unknown";
-  const patterns = permission.permissionPatterns ?? [];
-  const metadata = permission.permissionMetadata ?? {};
+  const permType = permission.permissionType;
+  const patterns = permission.permissionPatterns;
+  const metadata = permission.permissionMetadata;
   const diff = typeof metadata["diff"] === "string" ? metadata["diff"] : null;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,7 +29,7 @@ export function PermissionComposer({
   }, []);
 
   const handleReply = useCallback(
-    async (reply: "once" | "always" | "reject") => {
+    async (reply: PermissionReply) => {
       if (submitting || !requestId) return;
       setSubmitting(true);
       try {
@@ -77,9 +77,10 @@ export function PermissionComposer({
       {patterns.length > 0 && (
         <div className="onyxmind-pc-patterns">
           {patterns.map((p, i) => (
-            <span key={i} className="onyxmind-pc-pattern">
-              {p}
-            </span>
+            <div key={i} className="onyxmind-pc-pattern">
+              <ObsidianIcon icon="file" className="onyxmind-pc-pattern-icon" />
+              <span className="onyxmind-pc-pattern-text">{p}</span>
+            </div>
           ))}
         </div>
       )}
@@ -92,9 +93,9 @@ export function PermissionComposer({
       )}
 
       <div className="onyxmind-pc-footer">
-        <span className="onyxmind-pc-hint">Y Allow once</span>
-        <span className="onyxmind-pc-hint">A Allow always</span>
-        <span className="onyxmind-pc-hint">N Deny</span>
+        <span className="onyxmind-pc-hint"><kbd className="onyxmind-kbd">Y</kbd> Allow once</span>
+        <span className="onyxmind-pc-hint"><kbd className="onyxmind-kbd">A</kbd> Allow always</span>
+        <span className="onyxmind-pc-hint"><kbd className="onyxmind-kbd">N</kbd> Deny</span>
         <div className="onyxmind-pc-actions">
           <button
             type="button"

@@ -3,6 +3,7 @@ import type OnyxMindPlugin from "../../main";
 import {
   type ModelConfig,
   type OnyxMindSettings,
+  type PermissionConfig,
   type ProviderConfig,
   type ProviderId,
   PROVIDER_META,
@@ -509,13 +510,177 @@ function AdvancedTab({ plugin }: { plugin: OnyxMindPlugin }) {
   );
 }
 
+// ── Permission tab ─────────────────────────────────────────────────────────
+
+function PathListEditor({
+  paths,
+  onChange,
+  placeholder,
+}: {
+  paths: string[];
+  onChange: (paths: string[]) => void;
+  placeholder?: string;
+}) {
+  const [input, setInput] = useState("");
+
+  const add = () => {
+    const trimmed = input.trim();
+    if (trimmed && !paths.includes(trimmed)) {
+      onChange([...paths, trimmed]);
+      setInput("");
+    }
+  };
+
+  return (
+    <div className="onyxmind-sp-path-field">
+      {paths.map((p) => (
+        <span key={p} className="onyxmind-sp-path-tag">
+          {p}
+          <button
+            className="onyxmind-sp-path-tag-remove"
+            aria-label={`Remove ${p}`}
+            onClick={() => onChange(paths.filter((x) => x !== p))}
+          >
+            ✕
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        className="onyxmind-sp-path-inline-input"
+        value={input}
+        placeholder={
+          paths.length === 0 ? (placeholder ?? "e.g. Journal/") : ""
+        }
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            add();
+          }
+          if (e.key === "Backspace" && input === "" && paths.length > 0) {
+            onChange(paths.slice(0, -1));
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+function PermissionTab({ plugin }: { plugin: OnyxMindPlugin }) {
+  const perm = plugin.settings.permissions;
+
+  const savePerm = async (updates: Partial<PermissionConfig>) => {
+    plugin.settings.permissions = { ...plugin.settings.permissions, ...updates };
+    await plugin.saveSettings();
+  };
+
+  const [writeMode, setWriteMode] = useState(perm.writeMode);
+  const [allowDelete, setAllowDelete] = useState(perm.allowDelete);
+  const [protectedPaths, setProtectedPaths] = useState(perm.protectedPaths);
+  const [allowedPaths, setAllowedPaths] = useState(perm.allowedPaths);
+  const [frontmatter, setFrontmatter] = useState(
+    perm.respectFrontmatterProtection,
+  );
+
+  return (
+    <div className="onyxmind-sp-rows">
+      <div className="onyxmind-sp-section">Write Permissions</div>
+
+      <SettingRow
+        name="Yolo mode"
+        desc="Allow agent to modify notes without asking for confirmation."
+      >
+        <Toggle
+          checked={writeMode === "allow"}
+          onChange={(v) => {
+            const mode = v ? "allow" : "ask";
+            setWriteMode(mode);
+            void savePerm({ writeMode: mode });
+          }}
+        />
+      </SettingRow>
+
+      <SettingRow
+        name="Allow delete"
+        desc="Allow agent to delete notes. When off, delete operations always require confirmation."
+      >
+        <Toggle
+          checked={allowDelete}
+          onChange={(v) => {
+            setAllowDelete(v);
+            void savePerm({ allowDelete: v });
+          }}
+        />
+      </SettingRow>
+
+      <div className="onyxmind-sp-section">Path Restrictions</div>
+
+      <div className="onyxmind-sp-row onyxmind-sp-row--block">
+        <div className="onyxmind-sp-row-info">
+          <div className="onyxmind-sp-row-name">Protected paths</div>
+          <div className="onyxmind-sp-row-desc">
+            Agent will never modify or delete notes in these paths.
+          </div>
+        </div>
+        <div className="onyxmind-sp-row-ctrl">
+          <PathListEditor
+            paths={protectedPaths}
+            placeholder="e.g. Journal/"
+            onChange={(paths) => {
+              setProtectedPaths(paths);
+              void savePerm({ protectedPaths: paths });
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="onyxmind-sp-row onyxmind-sp-row--block">
+        <div className="onyxmind-sp-row-info">
+          <div className="onyxmind-sp-row-name">Allowed paths (whitelist)</div>
+          <div className="onyxmind-sp-row-desc">
+            Restrict agent to only operate within these paths. Leave empty to
+            allow access to the entire vault.
+          </div>
+        </div>
+        <div className="onyxmind-sp-row-ctrl">
+          <PathListEditor
+            paths={allowedPaths}
+            placeholder="e.g. AI-Notes/"
+            onChange={(paths) => {
+              setAllowedPaths(paths);
+              void savePerm({ allowedPaths: paths });
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="onyxmind-sp-section">Advanced</div>
+
+      <SettingRow
+        name="Respect frontmatter protection"
+        desc='Prevent agent from modifying notes that have "protected: true" in their frontmatter.'
+      >
+        <Toggle
+          checked={frontmatter}
+          onChange={(v) => {
+            setFrontmatter(v);
+            void savePerm({ respectFrontmatterProtection: v });
+          }}
+        />
+      </SettingRow>
+    </div>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────
 
-type TabId = "provider" | "agent" | "advanced";
+type TabId = "provider" | "agent" | "permission" | "advanced";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "provider", label: "Provider" },
   { id: "agent", label: "Agent" },
+  { id: "permission", label: "Permission" },
   { id: "advanced", label: "Advanced" },
 ];
 
@@ -543,6 +708,7 @@ export function SettingsPanel({ plugin }: { plugin: OnyxMindPlugin }) {
       <div className="onyxmind-sp-content" role="tabpanel">
         {activeTab === "provider" && <ProviderTab plugin={plugin} />}
         {activeTab === "agent" && <AgentTab plugin={plugin} />}
+        {activeTab === "permission" && <PermissionTab plugin={plugin} />}
         {activeTab === "advanced" && <AdvancedTab plugin={plugin} />}
       </div>
     </div>
