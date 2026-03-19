@@ -98,35 +98,29 @@ Pre-configured AI capabilities for common workflows:
 
 ### Prerequisites
 
-- **Obsidian** v0.15.0 or higher
-- **Node.js** v18+ (for development)
+- **Obsidian** v1.12.3 or higher
 - **OpenCode CLI** installed and configured ([Installation Guide](https://opencode.ai/docs/installation))
 
 ### Method 1: Manual Installation (Recommended for Testing)
 
 1. **Download the latest release**
 
-   ```bash
-   # Clone the repository
-   git clone https://github.com/lfyzjck/onyxmind.git
-   cd onyxmind
+   Go to the [Releases page](https://github.com/lfyzjck/onyxmind/releases) and download the following files from the latest release:
+   - `main.js`
+   - `manifest.json`
+   - `styles.css`
+
+2. **Copy to Obsidian plugins folder**
+
+   Create the plugin directory and place the downloaded files inside:
+
+   ```
+   <vault>/.obsidian/plugins/onyxmind/main.js
+   <vault>/.obsidian/plugins/onyxmind/manifest.json
+   <vault>/.obsidian/plugins/onyxmind/styles.css
    ```
 
-2. **Build the plugin**
-
-   ```bash
-   npm install
-   npm run build
-   ```
-
-3. **Copy to Obsidian plugins folder**
-
-   ```bash
-   # Replace <vault-path> with your vault location
-   cp main.js manifest.json styles.css <vault-path>/.obsidian/plugins/onyxmind/
-   ```
-
-4. **Enable in Obsidian**
+3. **Enable in Obsidian**
    - Open Obsidian Settings
    - Navigate to **Community plugins**
    - Disable **Safe mode** (if enabled)
