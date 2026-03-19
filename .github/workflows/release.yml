@@ -15,16 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
+      - uses: oven-sh/setup-bun@v2
 
       - name: Build plugin
         run: |
-          npm ci
-          npm run build
+          bun install
+          bun run build
 
       - name: Create release
         env:
