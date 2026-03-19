@@ -24,6 +24,19 @@ export interface ProviderConfig {
   models: ModelConfig[];
 }
 
+export interface PermissionConfig {
+  // Whether agent can write without asking (yolo mode)
+  writeMode: "ask" | "allow";
+  // Allow delete operations (independent of writeMode)
+  allowDelete: boolean;
+  // Whitelist: restrict agent to these paths only (empty = no restriction)
+  allowedPaths: string[];
+  // Blacklist: agent will never modify/delete notes in these paths
+  protectedPaths: string[];
+  // Respect "protected: true" in note frontmatter
+  respectFrontmatterProtection: boolean;
+}
+
 export const PROVIDER_META: Record<
   ProviderId,
   {
@@ -107,6 +120,9 @@ export interface OnyxMindSettings {
   maxHistoryMessages: number;
   showToolCallsAfterStreaming: boolean;
 
+  // Permission settings
+  permissions: PermissionConfig;
+
   // Advanced settings
   timeout: number;
   maxRetries: number;
@@ -146,6 +162,15 @@ export const DEFAULT_SETTINGS: OnyxMindSettings = {
   timeout: 30000,
   maxRetries: 3,
   streamResponse: true,
+
+  // Permission settings
+  permissions: {
+    writeMode: "allow",
+    allowDelete: false,
+    allowedPaths: [],
+    protectedPaths: [],
+    respectFrontmatterProtection: false,
+  },
 };
 
 export class OnyxMindSettingTab extends PluginSettingTab {

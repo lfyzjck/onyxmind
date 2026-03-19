@@ -6,7 +6,8 @@ import { ToolDefault } from "./tools/tool-default";
 import { ToolEdit } from "./tools/tool-edit";
 import { ToolGlob } from "./tools/tool-glob";
 import { ToolGrep } from "./tools/tool-grep";
-import { ToolQuestion } from "./tools/tool-question";
+import { PermissionDisplay } from "./permission/permission-display";
+import { QuestionDisplay } from "./question/question-display";
 import { ToolRead } from "./tools/tool-read";
 import { ToolTask } from "./tools/tool-task";
 import { ToolWebfetch } from "./tools/tool-webfetch";
@@ -21,7 +22,8 @@ const TOOL_REGISTRY: Record<string, ComponentType<ToolItemProps>> = {
   glob: ToolGlob,
   grep: ToolGrep,
   task: ToolTask,
-  question: ToolQuestion,
+  question: QuestionDisplay,
+  permission: PermissionDisplay,
   webfetch: ToolWebfetch,
   websearch: ToolWebsearch,
 };

@@ -4,7 +4,12 @@
  */
 
 import { Session } from "@opencode-ai/sdk/v2";
-import type { OpencodeService, Message, StreamChunk } from "./opencode-service";
+import type {
+  Message,
+  OpencodeService,
+  PermissionReply,
+  StreamChunk,
+} from "./opencode-service";
 
 export interface OnyxMindSession {
   id: string;
@@ -560,7 +565,7 @@ export class SessionManager {
    */
   async replyToPermission(
     requestId: string,
-    reply: "once" | "always" | "reject",
+    reply: PermissionReply,
   ): Promise<boolean> {
     return this.opencodeService.replyToPermission(requestId, reply);
   }

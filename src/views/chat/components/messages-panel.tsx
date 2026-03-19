@@ -7,10 +7,9 @@ import type {
   Message,
   StreamChunkToolUse,
 } from "../../../services/opencode-service";
-import { useEffect, useMemo, type RefObject } from "react";
+import { useEffect, type RefObject } from "react";
 import { LABEL_ERROR, LABEL_RUNNING } from "../constants";
 import { registerFileLinkClickHandler } from "../file-link";
-import { hasActiveQuestion } from "../render-state";
 
 interface MessagesPanelProps {
   plugin: OnyxMindPlugin;
@@ -20,6 +19,7 @@ interface MessagesPanelProps {
   streamText: string;
   streamThinking: string;
   streamTools: StreamChunkToolUse[];
+  hasActiveQuestion: boolean;
   onQuestionReply: (questionId: string, answers: string[][]) => Promise<void>;
   onSelectCapability: (prompt: string) => void;
   errors: string[];
@@ -34,17 +34,13 @@ export function MessagesPanel(props: MessagesPanelProps) {
     streamText,
     streamThinking,
     streamTools,
+    hasActiveQuestion,
     onQuestionReply,
     onSelectCapability,
     errors,
   } = props;
 
   const showWelcome = messages.length === 0 && !isStreaming;
-
-  const hasActiveQuestionTool = useMemo(
-    () => hasActiveQuestion(streamTools),
-    [streamTools],
-  );
 
   useEffect(() => {
     const container = messagesRef.current;
@@ -82,7 +78,7 @@ export function MessagesPanel(props: MessagesPanelProps) {
         <div
           className="onyxmind-thinking"
           style={{
-            display: isStreaming && !hasActiveQuestionTool ? "flex" : "none",
+            display: isStreaming && !hasActiveQuestion ? "flex" : "none",
           }}
         >
           <span>{LABEL_RUNNING}</span>

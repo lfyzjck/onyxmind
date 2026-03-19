@@ -1,27 +1,16 @@
-import { ObsidianIcon, ToolHeader, ToolWrapper } from "./shared";
-import type { ToolItemProps } from "./shared";
+import { ObsidianIcon, ToolHeader, ToolWrapper } from "../tools/shared";
+import type { ToolItemProps } from "../tools/shared";
+import type { QuestionInfo } from "../../../../services/opencode-service";
 
-interface QuestionOption {
-  label: string;
-}
-
-interface QuestionInfo {
-  question: string;
-  header?: string;
-  options: QuestionOption[];
-  multiSelect?: boolean;
-}
-
-export function ToolQuestion({ tool }: ToolItemProps) {
+export function QuestionDisplay({ tool }: ToolItemProps) {
   const rawQuestions = tool.input?.["questions"];
   const questions: QuestionInfo[] = Array.isArray(rawQuestions)
     ? (rawQuestions as QuestionInfo[])
     : [];
 
   const firstQ = questions[0];
-  // Interactive state (running + questionId) is handled by QuestionComposer in the
-  // composer area — this component only renders historical/abandoned/answered states.
-  const isAbandoned = tool.status === "running" && !tool.questionId;
+  // When status is still "running" in historical view, the session was interrupted.
+  const isAbandoned = tool.status === "running";
   const isAnswered = tool.status === "completed";
 
   return (

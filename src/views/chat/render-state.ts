@@ -4,30 +4,12 @@ import type {
 } from "../../services/opencode-service";
 import type { ToolCardMap } from "./types";
 
-export function mergeToolChunkMap(
-  previous: ToolCardMap,
-  chunk: StreamChunkToolUse,
-): ToolCardMap {
-  const previousChunk = previous[chunk.partId];
-  return {
-    ...previous,
-    [chunk.partId]: previousChunk ? { ...previousChunk, ...chunk } : chunk,
-  };
-}
-
-export function getToolChunks(toolMap: ToolCardMap): StreamChunkToolUse[] {
-  return Object.values(toolMap);
-}
-
 export function getActiveQuestion(
   tools: StreamChunkToolUse[],
 ): StreamChunkToolUse | null {
   return (
     tools.find(
-      (tool) =>
-        tool.tool === "question" &&
-        tool.status === "running" &&
-        tool.questionId,
+      (t) => t.tool === "question" && t.status === "running" && t.questionId,
     ) ?? null
   );
 }
@@ -41,12 +23,25 @@ export function getActivePermission(
 ): StreamChunkToolUse | null {
   return (
     tools.find(
-      (tool) =>
-        tool.tool === "permission" &&
-        tool.status === "running" &&
-        tool.permissionId,
+      (t) =>
+        t.tool === "permission" && t.status === "running" && t.permissionId,
     ) ?? null
   );
+}
+
+export function mergeToolChunkMap(
+  previous: ToolCardMap,
+  chunk: StreamChunkToolUse,
+): ToolCardMap {
+  const previousChunk = previous[chunk.partId];
+  return {
+    ...previous,
+    [chunk.partId]: previousChunk ? { ...previousChunk, ...chunk } : chunk,
+  };
+}
+
+export function getToolChunks(toolMap: ToolCardMap): StreamChunkToolUse[] {
+  return Object.values(toolMap);
 }
 
 export function shouldShowHistoricalToolCalls(

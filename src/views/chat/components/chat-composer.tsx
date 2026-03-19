@@ -3,22 +3,22 @@ import type { KeyboardEvent, RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import type {
   AvailableCommand,
-  StreamChunkToolUse,
+  PermissionReply,
+  StreamChunkPermission,
+  StreamChunkQuestion,
 } from "../../../services/opencode-service";
 import type { ProviderId, ProviderConfig } from "../../../settings";
 import { PROVIDER_META } from "../../../settings";
 import {
   ARIA_LABEL_SEND,
-  ARIA_LABEL_SLASH_MENU,
   ARIA_LABEL_STOP,
-  CLASS_IS_SELECTED,
   LABEL_LOCAL_SAFE,
-  LABEL_NO_COMMANDS,
   LABEL_SLASH_HINT,
   PLACEHOLDER_CHAT_INPUT,
 } from "../constants";
-import { QuestionComposer } from "./question-composer";
-import { PermissionComposer } from "./permission-composer";
+import { PermissionComposer } from "./permission/permission-composer";
+import { QuestionComposer } from "./question/question-composer";
+import { SlashMenu } from "./slash-menu";
 
 interface ChatComposerProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
@@ -33,12 +33,12 @@ interface ChatComposerProps {
   configuredProviders: ProviderConfig[];
   noteChipPath?: string | null;
   noteChipAttached?: boolean;
-  activeQuestion?: StreamChunkToolUse | null;
+  activeQuestion?: StreamChunkQuestion | null;
   onQuestionReply?: (questionId: string, answers: string[][]) => Promise<void>;
-  activePermission?: StreamChunkToolUse | null;
+  activePermission?: StreamChunkPermission | null;
   onPermissionReply?: (
     requestId: string,
-    reply: "once" | "always" | "reject",
+    reply: PermissionReply,
   ) => Promise<void>;
   onInputChange: (value: string, cursor: number) => void;
   onInputClick: (value: string, cursor: number) => void;
@@ -199,38 +199,13 @@ export function ChatComposer(props: ChatComposerProps) {
             onKeyDown={onInputKeyDown}
           />
 
-          {slashMenuOpen && (
-            <div
-              className="onyxmind-slash-menu"
-              role="listbox"
-              aria-label={ARIA_LABEL_SLASH_MENU}
-            >
-              {filteredCommands.length === 0 && (
-                <div className="onyxmind-slash-empty">{LABEL_NO_COMMANDS}</div>
-              )}
-              {filteredCommands.map((command, index) => (
-                <button
-                  key={`${command.source}:${command.name}`}
-                  type="button"
-                  role="option"
-                  aria-selected={index === slashSelectedIndex}
-                  className={`onyxmind-slash-item ${index === slashSelectedIndex ? CLASS_IS_SELECTED : ""}`}
-                  onMouseEnter={() => onSetSlashSelectedIndex(index)}
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    onApplySlashCommand(command);
-                  }}
-                >
-                  <span className="onyxmind-slash-name">/{command.name}</span>
-                  {command.description && (
-                    <span className="onyxmind-slash-description">
-                      {command.description}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+          <SlashMenu
+            open={slashMenuOpen}
+            commands={filteredCommands}
+            selectedIndex={slashSelectedIndex}
+            onHover={onSetSlashSelectedIndex}
+            onSelect={onApplySlashCommand}
+          />
 
           <div className="onyxmind-input-footer">
             <div className="onyxmind-footer-info">
