@@ -22,12 +22,40 @@ jobs:
           bun install
           bun run build
 
-      - name: Create release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine if beta release
+        id: check_beta
         run: |
-          tag="${{ github.ref_name }}"
-          gh release create "$tag" \
-            --title "$tag" \
-            --generate-notes \
-            main.js manifest.json styles.css
+          TAG="${GITHUB_REF#refs/tags/}"
+          if [[ "$TAG" == *"beta"* ]]; then
+            echo "is_beta=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_beta=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release (stable)
+        if: steps.check_beta.outputs.is_beta == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.check_beta.outputs.tag }}
+          name: ${{ steps.check_beta.outputs.tag }}
+          draft: false
+          prerelease: false
+          files: |
+            main.js
+            styles.css
+            manifest.json
+
+      - name: Create GitHub Release (beta)
+        if: steps.check_beta.outputs.is_beta == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.check_beta.outputs.tag }}
+          name: ${{ steps.check_beta.outputs.tag }}
+          draft: false
+          prerelease: true
+          files: |
+            main.js
+            styles.css
+            manifest.json
+            manifest-beta.json
