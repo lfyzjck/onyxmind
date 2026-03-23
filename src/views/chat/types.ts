@@ -1,5 +1,5 @@
 import type OnyxMindPlugin from "../../main";
-import type { StreamChunkToolUse } from "../../services/opencode-service";
+import type { StreamChunkToolUse } from "../../core/stream";
 
 export type ToolCardMap = Record<string, StreamChunkToolUse>;
 

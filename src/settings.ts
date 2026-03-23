@@ -9,7 +9,17 @@ export type ProviderId =
   | "anthropic"
   | "kimi"
   | "kimi-for-coding"
+  | "minimax-cn-coding-plan"
   | "openrouter";
+
+export const PROVIDER_IDS: ProviderId[] = [
+  "openai",
+  "anthropic",
+  "kimi",
+  "kimi-for-coding",
+  "minimax-cn-coding-plan",
+  "openrouter",
+];
 
 export interface ModelConfig {
   modelId: string;
@@ -21,6 +31,7 @@ export interface ProviderConfig {
   id: ProviderId;
   apiKey: string;
   apiBase: string;
+  npm: string;
   models: ModelConfig[];
 }
 
@@ -41,6 +52,7 @@ export const PROVIDER_META: Record<
   ProviderId,
   {
     name: string;
+    npm: string; // api protocol
     defaultApiBase: string;
     fixedApiBase: boolean;
     defaultModels: ModelConfig[];
@@ -49,6 +61,7 @@ export const PROVIDER_META: Record<
   openai: {
     name: "OpenAI",
     defaultApiBase: "https://api.openai.com/v1",
+    npm: "@ai-sdk/openai",
     fixedApiBase: false,
     defaultModels: [
       { modelId: "gpt-4o", maxTokens: 128000, isReasoning: false },
@@ -59,6 +72,7 @@ export const PROVIDER_META: Record<
   anthropic: {
     name: "Anthropic",
     defaultApiBase: "https://api.anthropic.com",
+    npm: "@ai-sdk/anthropic",
     fixedApiBase: false,
     defaultModels: [
       { modelId: "claude-opus-4-6", maxTokens: 200000, isReasoning: false },
@@ -69,6 +83,7 @@ export const PROVIDER_META: Record<
   kimi: {
     name: "Kimi",
     defaultApiBase: "https://api.moonshot.cn/v1",
+    npm: "@ai-sdk/openai-compatiable",
     fixedApiBase: false,
     defaultModels: [
       { modelId: "moonshot-v1-128k", maxTokens: 128000, isReasoning: false },
@@ -80,16 +95,27 @@ export const PROVIDER_META: Record<
     ],
   },
   "kimi-for-coding": {
-    name: "Kimi for Coding",
     defaultApiBase: "https://api.kimi.com/coding/",
+    name: "Kimi for Coding",
+    npm: "@ai-sdk/anthropic",
     fixedApiBase: true,
     defaultModels: [
       { modelId: "k2p5", maxTokens: 256000, isReasoning: true },
       { modelId: "kimi-k2-thinking", maxTokens: 256000, isReasoning: true },
     ],
   },
+  "minimax-cn-coding-plan": {
+    name: "MiniMax Token Plan",
+    defaultApiBase: "https://api.minimaxi.com/anthropic/v1",
+    npm: "@ai-sdk/anthropic",
+    fixedApiBase: true,
+    defaultModels: [
+      { modelId: "MiniMax-M2.7", maxTokens: 204800, isReasoning: true },
+    ],
+  },
   openrouter: {
     name: "OpenRouter",
+    npm: "@openrouter/ai-sdk-provider",
     defaultApiBase: "https://openrouter.ai/api/v1",
     fixedApiBase: true,
     defaultModels: [
@@ -129,7 +155,10 @@ export interface OnyxMindSettings {
   streamResponse: boolean;
 }
 
-export function isProviderConfigured(provider: ProviderConfig): boolean {
+export function isProviderConfigured(
+  provider: ProviderConfig | undefined,
+): boolean {
+  if (!provider) return false;
   return provider.apiKey.trim().length > 0 && provider.models.length > 0;
 }
 
@@ -146,6 +175,7 @@ export const DEFAULT_SETTINGS: OnyxMindSettings = {
     apiKey: "",
     apiBase: "",
     models: PROVIDER_META[id].defaultModels,
+    npm: "@ai-sdk/openai",
   })),
   activeProviderId: "kimi",
   activeModelId: "kimi-k2-0711-preview",

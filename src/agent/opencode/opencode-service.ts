@@ -3,16 +3,29 @@
  * Encapsulates OpenCode SDK functionality
  */
 
-import { Notice, App, FileSystemAdapter } from "obsidian";
+import { Notice, App } from "obsidian";
+import { getVaultBasePath } from "../../core/obsidian";
+import type {
+  AvailableCommand,
+  Message,
+  PermissionReply,
+  StreamChunk,
+  StreamChunkToolUse,
+} from "../../core/stream";
 import { createOpencodeClient } from "@opencode-ai/sdk/v2/client";
 import {
   createOpencodeServerPatched,
   type PatchedServerOptions,
-} from "../utils/opencode-server";
+} from "./opencode-server";
 import { execSync } from "child_process";
-import { isProviderConfigured, type OnyxMindSettings } from "../settings";
-import { findOpencodeExecutable, getEnhancedPath } from "../utils/env";
-import { buildAgentPrompt } from "./agent-prompt";
+import {
+  isProviderConfigured,
+  PROVIDER_META,
+  type OnyxMindSettings,
+  type PermissionConfig,
+} from "../../settings";
+import { findOpencodeExecutable, getEnhancedPath } from "./env";
+import { buildAgentPrompt } from "../../services/agent-prompt";
 import type {
   ApiError,
   ProviderAuthError,
@@ -45,15 +58,6 @@ type OpencodeServerInstance = Awaited<
   ReturnType<typeof createOpencodeServerPatched>
 >;
 
-function getVaultBasePath(app: App): string {
-  if (app.vault.adapter instanceof FileSystemAdapter) {
-    return app.vault.adapter.getBasePath();
-  } else {
-    // not support mobile device
-    throw new Error("Mobile device not supported");
-  }
-}
-
 type SessionError =
   | ProviderAuthError
   | UnknownError
@@ -84,96 +88,91 @@ function extractErrorMessage(err: SessionError): string {
   }
 }
 
-export interface Message {
-  role: "user" | "assistant";
-  content: string;
-  timestamp: number;
-  error?: string;
-  tools?: StreamChunkToolUse[];
-  hasThinking?: boolean;
-  displayContent?: string;
+import type {
+  PermissionAction,
+  PermissionRuleConfig,
+} from "../../core/permission";
+
+// ── Permission mapping ────────────────────────────────────────────────────
+
+/** Convert a user-supplied path to a glob pattern. */
+function toGlob(path: string): string {
+  const trimmed = path.replace(/\/+$/, "");
+  // If it looks like a file (has an extension), use as-is
+  if (/\.[^/]+$/.test(trimmed)) return trimmed;
+  return `${trimmed}/**`;
 }
 
-export interface AvailableCommand {
-  name: string;
-  description: string;
-  source: "command" | "mcp" | "skill";
-  template: string;
+/**
+ * Build a PermissionRuleConfig for a single tool.
+ *
+ * Rules are evaluated last-match-wins by OpenCode, so we put the wildcard
+ * first and more-specific overrides after it.
+ *
+ *   allowedPaths set  → deny *, then allow each allowed path
+ *   protectedPaths    → always appended last as "deny" (overrides whitelist)
+ *   neither set       → return the plain defaultAction string
+ */
+function buildPathRules(opts: {
+  allowedPaths: string[];
+  protectedPaths: string[];
+  defaultAction: PermissionAction;
+}): PermissionRuleConfig {
+  const { allowedPaths, protectedPaths, defaultAction } = opts;
+  if (allowedPaths.length === 0 && protectedPaths.length === 0) {
+    return defaultAction;
+  }
+
+  const rules: Record<string, PermissionAction> = {};
+
+  if (allowedPaths.length > 0) {
+    rules["*"] = "deny";
+    for (const p of allowedPaths) rules[toGlob(p)] = defaultAction;
+  } else {
+    rules["*"] = defaultAction;
+  }
+
+  for (const p of protectedPaths) rules[toGlob(p)] = "deny";
+
+  return rules;
 }
 
-export type PermissionReply = "once" | "always" | "reject";
+/**
+ * Map OnyxMind PermissionConfig → OpenCode server permission config.
+ *
+ * Read operations (read/glob/grep/list) respect the allowedPaths whitelist
+ * but are NOT blocked by protectedPaths — the agent can still read protected
+ * notes for context, it just cannot modify them.
+ *
+ * Write operations (edit) respect both allowedPaths and protectedPaths.
+ */
+export function buildOpencodePermission(
+  perm: PermissionConfig,
+): Record<string, PermissionRuleConfig> {
+  const writeAction = perm.writeMode;
 
-/** Incremental text content from the assistant */
-export interface StreamChunkContent {
-  type: "content";
-  text: string;
+  const readRules = buildPathRules({
+    allowedPaths: perm.allowedPaths,
+    protectedPaths: [],
+    defaultAction: "allow",
+  });
+
+  const writeRules = buildPathRules({
+    allowedPaths: perm.allowedPaths,
+    protectedPaths: perm.protectedPaths,
+    defaultAction: writeAction,
+  });
+
+  return {
+    websearch: "allow",
+    webfetch: "allow",
+    read: readRules,
+    glob: readRules,
+    grep: readRules,
+    list: readRules,
+    edit: writeRules,
+  };
 }
-
-/** Reasoning / thinking text from the model */
-export interface StreamChunkThinking {
-  type: "thinking";
-  text: string;
-}
-
-/** Tool invocation (may fire multiple times as state changes) */
-export interface StreamChunkToolUse {
-  type: "tool_use";
-  partId: string;
-  tool: string;
-  status: "pending" | "running" | "completed" | "error";
-  input?: Record<string, unknown>;
-  title?: string; // running / completed
-  output?: string; // completed
-  error?: string; // error
-  // Question tool fields (present when tool === "question")
-  questionId?: string;
-  // Permission tool fields (present when tool === "permission")
-  permissionId?: string;
-  permissionType?: string;
-  permissionPatterns?: string[];
-  permissionMetadata?: Record<string, unknown>;
-}
-
-export interface QuestionOption {
-  label: string;
-}
-
-export interface QuestionInfo {
-  question: string;
-  header?: string;
-  options: QuestionOption[];
-  multiSelect?: boolean;
-}
-
-/** Interactive question asked by the assistant (not a tool_use) */
-export interface StreamChunkQuestion {
-  type: "question";
-  questionId: string;
-  questions: QuestionInfo[];
-}
-
-/** Permission request from the assistant (not a tool_use) */
-export interface StreamChunkPermission {
-  type: "permission";
-  permissionId: string;
-  permissionType: string;
-  permissionPatterns: string[];
-  permissionMetadata: Record<string, unknown>;
-}
-
-/** A recoverable or fatal error occurred during generation */
-export interface StreamChunkError {
-  type: "error";
-  error: string;
-}
-
-export type StreamChunk =
-  | StreamChunkContent
-  | StreamChunkThinking
-  | StreamChunkToolUse
-  | StreamChunkQuestion
-  | StreamChunkPermission
-  | StreamChunkError;
 
 export class OpencodeService {
   private _client: OpencodeClient | null = null;
@@ -261,14 +260,18 @@ export class OpencodeService {
       // Build provider config map from all configured providers
       const providerConfigMap: Record<string, object> = {};
       for (const p of this.settings.providers) {
-        if (!isProviderConfigured(p)) continue;
+        if (!p || !isProviderConfigured(p)) continue;
+        const meta = PROVIDER_META[p.id];
+        if (!meta) continue;
         providerConfigMap[p.id] = {
           models: Object.fromEntries(
             p.models.map((m) => [m.modelId, { name: m.modelId }]),
           ),
           options: {
             apiKey: p.apiKey,
-            ...(p.apiBase ? { baseURL: p.apiBase } : {}),
+            baseURL: meta.fixedApiBase
+              ? meta.defaultApiBase
+              : p.apiBase || meta.defaultApiBase,
           },
         };
       }
@@ -283,11 +286,7 @@ export class OpencodeService {
             cors: [OBSIDIAN_CORS_ORIGIN],
           },
           provider: providerConfigMap,
-          permission: {
-            websearch: "allow",
-            edit: "ask",
-            read: "ask",
-          },
+          permission: buildOpencodePermission(this.settings.permissions),
           agent: {
             build: {
               prompt: agentPrompt,

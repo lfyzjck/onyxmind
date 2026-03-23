@@ -4,12 +4,8 @@
  */
 
 import { Session } from "@opencode-ai/sdk/v2";
-import type {
-  Message,
-  OpencodeService,
-  PermissionReply,
-  StreamChunk,
-} from "./opencode-service";
+import type { Message, PermissionReply, StreamChunk } from "../core/stream";
+import type { OpencodeService } from "../agent/opencode/opencode-service";
 
 export interface OnyxMindSession {
   id: string;

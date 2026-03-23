@@ -2,6 +2,7 @@
  * Welcome capabilities configuration
  * Defines the quick-start prompts shown when a new session is created
  */
+import { getCurrentLocale } from "../../i18n";
 
 export interface WelcomeCapability {
   id: string;
@@ -11,7 +12,42 @@ export interface WelcomeCapability {
   prompt: string;
 }
 
-export const WELCOME_CAPABILITIES: WelcomeCapability[] = [
+const EN_CAPABILITIES: WelcomeCapability[] = [
+  {
+    id: "complete-metadata",
+    icon: "📝",
+    title: "Complete note metadata",
+    description: "Auto-add tags, keywords and backlinks",
+    prompt:
+      "Please help me complete the metadata for the current note, including:\n1. Add appropriate tags\n2. Complete property info (title, date, type, status)\n3. Extract up to 3 keywords from the note content, search for related notes, and add backlinks at the end of the note",
+  },
+  {
+    id: "review-note",
+    icon: "🔍",
+    title: "Review note",
+    description: "Check completeness and logic",
+    prompt:
+      "Please review the current note, focusing on:\n1. Completeness and coherence of content\n2. Clarity of logical structure\n3. Any missing or supplementary parts\n4. Accuracy of language\n\nPlease provide specific improvement suggestions.",
+  },
+  {
+    id: "quiz",
+    icon: "🎯",
+    title: "Quiz",
+    description: "Generate test questions from note content",
+    prompt:
+      "Please generate a quiz based on the current note content:\n1. Include 3-5 multiple choice questions\n2. Use the question component to ask me\n3. Questions should cover the core knowledge points\n4. Ask one question at a time, wait for an answer before continuing\n\nHelp me test my understanding of the content.",
+  },
+  {
+    id: "zen-mode",
+    icon: "🧘",
+    title: "Zen mode",
+    description: "Deep thinking, guided exploration",
+    prompt:
+      "Please enter Zen mode, based on the current note content:\n1. Raise 2-3 deep thinking questions\n2. Guide me to understand this topic from different angles\n3. Explore potential connections and extensions\n4. Inspire new thoughts and insights\n\nLet's explore this topic together.",
+  },
+];
+
+const ZH_CAPABILITIES: WelcomeCapability[] = [
   {
     id: "complete-metadata",
     icon: "📝",
@@ -45,3 +81,7 @@ export const WELCOME_CAPABILITIES: WelcomeCapability[] = [
       "请进入 Zen 模式，基于当前笔记内容：\n1. 提出 2-3 个深度思考问题\n2. 引导我从不同角度理解这个主题\n3. 探索潜在的关联和延伸方向\n4. 激发新的思考和洞察\n\n让我们一起深入探索这个话题。",
   },
 ];
+
+export function getWelcomeCapabilities(): WelcomeCapability[] {
+  return getCurrentLocale() === "zh" ? ZH_CAPABILITIES : EN_CAPABILITIES;
+}

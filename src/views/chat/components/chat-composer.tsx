@@ -2,20 +2,14 @@ import { setIcon } from "obsidian";
 import type { KeyboardEvent, RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import type {
-  AvailableCommand,
   PermissionReply,
   StreamChunkPermission,
   StreamChunkQuestion,
-} from "../../../services/opencode-service";
+} from "../../../core/stream";
+import type { AvailableCommand } from "../../../core/stream";
 import type { ProviderId, ProviderConfig } from "../../../settings";
 import { PROVIDER_META } from "../../../settings";
-import {
-  ARIA_LABEL_SEND,
-  ARIA_LABEL_STOP,
-  LABEL_LOCAL_SAFE,
-  LABEL_SLASH_HINT,
-  PLACEHOLDER_CHAT_INPUT,
-} from "../constants";
+import { t } from "../../../i18n";
 import { PermissionComposer } from "./permission/permission-composer";
 import { QuestionComposer } from "./question/question-composer";
 import { SlashMenu } from "./slash-menu";
@@ -174,7 +168,7 @@ export function ChatComposer(props: ChatComposerProps) {
           <textarea
             ref={inputRef}
             className="onyxmind-input"
-            placeholder={PLACEHOLDER_CHAT_INPUT}
+            placeholder={t("placeholder.chatInput")}
             rows={4}
             value={inputText}
             disabled={isStreaming}
@@ -276,14 +270,18 @@ export function ChatComposer(props: ChatComposerProps) {
                   </div>
                 )}
               </div>
-              <span className="onyxmind-footer-item">{LABEL_SLASH_HINT}</span>
-              <span className="onyxmind-footer-item">{LABEL_LOCAL_SAFE}</span>
+              <span className="onyxmind-footer-item">
+                {t("label.slashHint")}
+              </span>
+              <span className="onyxmind-footer-item">
+                {t("label.localSafe")}
+              </span>
             </div>
             <div className="onyxmind-button-row">
               <button
                 className="onyxmind-abort-button"
                 style={{ display: isStreaming ? "" : "none" }}
-                aria-label={ARIA_LABEL_STOP}
+                aria-label={t("aria.stop")}
                 onClick={onAbort}
               >
                 <span ref={abortIconRef} className="onyxmind-abort-icon" />
@@ -291,7 +289,7 @@ export function ChatComposer(props: ChatComposerProps) {
               <button
                 className="onyxmind-send-button"
                 style={{ display: isStreaming ? "none" : "" }}
-                aria-label={ARIA_LABEL_SEND}
+                aria-label={t("aria.send")}
                 disabled={isStreaming}
                 onClick={onSubmit}
               >

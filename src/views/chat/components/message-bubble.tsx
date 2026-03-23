@@ -1,5 +1,5 @@
 import type OnyxMindPlugin from "../../../main";
-import type { Message } from "../../../services/opencode-service";
+import type { Message } from "../../../core/stream";
 import { MarkdownBlock } from "./markdown-block";
 import { ToolUseList } from "./tool-use-list";
 import {

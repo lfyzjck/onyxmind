@@ -1,6 +1,7 @@
 import { ObsidianIcon, ToolHeader, ToolWrapper } from "../tools/shared";
 import type { ToolItemProps } from "../tools/shared";
-import type { QuestionInfo } from "../../../../services/opencode-service";
+import type { QuestionInfo } from "../../../../core/stream";
+import { t } from "../../../../i18n";
 
 export function QuestionDisplay({ tool }: ToolItemProps) {
   const rawQuestions = tool.input?.["questions"];
@@ -49,7 +50,7 @@ export function QuestionDisplay({ tool }: ToolItemProps) {
               icon="circle-slash"
               className="onyxmind-question-readonly-notice-icon"
             />
-            <span>Session interrupted, question left unanswered</span>
+            <span>{t("question.interrupted")}</span>
           </div>
         </div>
       )}

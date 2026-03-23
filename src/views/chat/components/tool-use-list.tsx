@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { StreamChunkToolUse } from "../../../services/opencode-service";
+import type { StreamChunkToolUse } from "../../../core/stream";
 import type { ToolItemProps } from "./tools/shared";
 import { ToolBash } from "./tools/tool-bash";
 import { ToolDefault } from "./tools/tool-default";

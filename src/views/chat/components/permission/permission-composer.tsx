@@ -3,8 +3,9 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import type {
   PermissionReply,
   StreamChunkPermission,
-} from "../../../../services/opencode-service";
+} from "../../../../core/stream";
 import { ObsidianIcon } from "../tools/shared";
+import { t } from "../../../../i18n";
 
 interface PermissionComposerProps {
   permission: StreamChunkPermission;
@@ -64,12 +65,12 @@ export function PermissionComposer({
       tabIndex={0}
       onKeyDown={handleKeyDown}
       role="dialog"
-      aria-label="Permission request"
+      aria-label={t("permission.request")}
     >
       <div className="onyxmind-pc-header">
         <ObsidianIcon icon="shield-alert" className="onyxmind-pc-icon" />
         <span className="onyxmind-pc-title">
-          Permission required:{" "}
+          {t("permission.title")}{" "}
           <span className="onyxmind-pc-type">{permType}</span>
         </span>
       </div>
@@ -87,51 +88,51 @@ export function PermissionComposer({
 
       {diff && (
         <details className="onyxmind-pc-diff">
-          <summary>View diff</summary>
+          <summary>{t("permission.viewDiff")}</summary>
           <pre className="onyxmind-pc-diff-content">{diff}</pre>
         </details>
       )}
 
       <div className="onyxmind-pc-footer">
         <span className="onyxmind-pc-hint">
-          <kbd className="onyxmind-kbd">Y</kbd> Allow once
+          <kbd className="onyxmind-kbd">Y</kbd> {t("permission.allowOnce")}
         </span>
         <span className="onyxmind-pc-hint">
-          <kbd className="onyxmind-kbd">A</kbd> Allow always
+          <kbd className="onyxmind-kbd">A</kbd> {t("permission.allowAlways")}
         </span>
         <span className="onyxmind-pc-hint">
-          <kbd className="onyxmind-kbd">N</kbd> Deny
+          <kbd className="onyxmind-kbd">N</kbd> {t("permission.deny")}
         </span>
         <div className="onyxmind-pc-actions">
           <button
             type="button"
             className="onyxmind-pc-btn onyxmind-pc-btn-deny"
             disabled={submitting}
-            aria-label="Deny permission"
+            aria-label={t("aria.denyPermission")}
             onClick={() => void handleReply("reject")}
           >
             <ObsidianIcon icon="x" className="onyxmind-btn-icon" />
-            Deny
+            {t("permission.deny")}
           </button>
           <button
             type="button"
             className="onyxmind-pc-btn onyxmind-pc-btn-once"
             disabled={submitting}
-            aria-label="Allow once"
+            aria-label={t("aria.allowOnce")}
             onClick={() => void handleReply("once")}
           >
             <ObsidianIcon icon="check" className="onyxmind-btn-icon" />
-            Allow once
+            {t("permission.allowOnce")}
           </button>
           <button
             type="button"
             className="onyxmind-pc-btn onyxmind-pc-btn-always"
             disabled={submitting}
-            aria-label="Allow always"
+            aria-label={t("aria.allowAlways")}
             onClick={() => void handleReply("always")}
           >
             <ObsidianIcon icon="shield-check" className="onyxmind-btn-icon" />
-            Always
+            {t("permission.allowAlways")}
           </button>
         </div>
       </div>

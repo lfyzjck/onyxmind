@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import type { StreamChunkQuestion } from "../../../../services/opencode-service";
+import type { StreamChunkQuestion } from "../../../../core/stream";
 import { ObsidianIcon } from "../tools/shared";
 
 interface QuestionComposerProps {

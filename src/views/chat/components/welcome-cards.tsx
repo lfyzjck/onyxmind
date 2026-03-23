@@ -1,8 +1,9 @@
 import React from "react";
 import {
-  WELCOME_CAPABILITIES,
+  getWelcomeCapabilities,
   type WelcomeCapability,
 } from "../welcome-capabilities";
+import { t } from "../../../i18n";
 
 interface WelcomeCardsProps {
   onSelectCapability: (prompt: string) => void;
@@ -28,14 +29,12 @@ export function WelcomeCards(props: WelcomeCardsProps) {
   return (
     <div className="onyxmind-welcome-container">
       <div className="onyxmind-welcome-header">
-        <div className="onyxmind-welcome-title">Welcome to OnyxMind</div>
-        <div className="onyxmind-welcome-subtitle">
-          Choose a quick start option or type a question to begin
-        </div>
+        <div className="onyxmind-welcome-title">{t("welcome.title")}</div>
+        <div className="onyxmind-welcome-subtitle">{t("welcome.subtitle")}</div>
       </div>
 
       <div className="onyxmind-welcome-cards">
-        {WELCOME_CAPABILITIES.map((capability) => (
+        {getWelcomeCapabilities().map((capability) => (
           <div
             key={capability.id}
             className="onyxmind-welcome-card"
@@ -58,9 +57,7 @@ export function WelcomeCards(props: WelcomeCardsProps) {
         ))}
       </div>
 
-      <div className="onyxmind-welcome-footer">
-        Type <code>/</code> to browse available commands
-      </div>
+      <div className="onyxmind-welcome-footer">{t("welcome.footer")}</div>
     </div>
   );
 }

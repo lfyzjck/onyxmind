@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { AvailableCommand } from "../../../services/opencode-service";
+import type { AvailableCommand } from "../../../core/stream";
 import { findSlashMatch } from "../slash";
 
 export interface UseSlashMenuOptions {

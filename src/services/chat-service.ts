@@ -9,7 +9,7 @@ import type {
   StreamChunkPermission,
   StreamChunkQuestion,
   StreamChunkToolUse,
-} from "./opencode-service";
+} from "../core/stream";
 import type {
   CreateSessionResult,
   OnyxMindSession,
