@@ -41,9 +41,9 @@ export default tseslint.config(
   // Node.js built-ins are available in Electron (desktop-only plugin)
   {
     files: [
-      "src/utils/env.ts",
-      "src/utils/opencode-server.ts",
-      "src/services/opencode-service.ts",
+      "src/agent/opencode/env.ts",
+      "src/agent/opencode/opencode-server.ts",
+      "src/agent/opencode/opencode-service.ts",
     ],
     languageOptions: {
       globals: {

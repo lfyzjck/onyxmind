@@ -1,12 +1,12 @@
 import type OnyxMindPlugin from "../../../main";
-import type { StreamChunkToolUse } from "../../../services/opencode-service";
+import type { StreamChunkToolUse } from "../../../core/stream";
 import { MarkdownBlock } from "./markdown-block";
 import { ToolUseList } from "./tool-use-list";
 import {
   CSS_CLASS_MESSAGE_HAS_THINKING,
   CSS_CLASS_PART_TEXT,
-  LABEL_THOUGHT,
 } from "../constants";
+import { t } from "../../../i18n";
 
 interface StreamingBubbleProps {
   plugin: OnyxMindPlugin;
@@ -31,7 +31,7 @@ export function StreamingBubble(props: StreamingBubbleProps) {
       <div className="onyxmind-message-body">
         {thinking.length > 0 && (
           <details className="onyxmind-part-thinking" open>
-            <summary>{LABEL_THOUGHT}</summary>
+            <summary>{t("label.thought")}</summary>
             <div className="onyxmind-thinking-content">{thinking}</div>
           </details>
         )}

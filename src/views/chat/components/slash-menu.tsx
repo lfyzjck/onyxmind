@@ -1,9 +1,6 @@
-import type { AvailableCommand } from "../../../services/opencode-service";
-import {
-  ARIA_LABEL_SLASH_MENU,
-  CLASS_IS_SELECTED,
-  LABEL_NO_COMMANDS,
-} from "../constants";
+import type { AvailableCommand } from "../../../core/stream";
+import { CLASS_IS_SELECTED } from "../constants";
+import { t } from "../../../i18n";
 
 interface SlashMenuProps {
   open: boolean;
@@ -28,10 +25,10 @@ export function SlashMenu({
     <div
       className="onyxmind-slash-menu"
       role="listbox"
-      aria-label={ARIA_LABEL_SLASH_MENU}
+      aria-label={t("aria.slashMenu")}
     >
       {commands.length === 0 && (
-        <div className="onyxmind-slash-empty">{LABEL_NO_COMMANDS}</div>
+        <div className="onyxmind-slash-empty">{t("label.noCommands")}</div>
       )}
       {commands.map((command, index) => (
         <button

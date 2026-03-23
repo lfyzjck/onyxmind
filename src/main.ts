@@ -4,10 +4,11 @@ import {
   OnyxMindSettings,
   OnyxMindSettingTab,
 } from "./settings";
-import { OpencodeService } from "./services/opencode-service";
+import { OpencodeService } from "./agent/opencode/opencode-service";
 import { SessionManager } from "./services/session-manager";
 import { ChatService } from "./services/chat-service";
 import { ChatView, VIEW_TYPE_CHAT } from "./views/chat-view";
+import { setupI18n, t } from "./i18n";
 
 export default class OnyxMindPlugin extends Plugin {
   settings: OnyxMindSettings;
@@ -27,6 +28,7 @@ export default class OnyxMindPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings();
+    setupI18n();
 
     // Initialize services
     this.opencodeService = new OpencodeService(this.app, this.settings);
@@ -39,14 +41,14 @@ export default class OnyxMindPlugin extends Plugin {
     // Initialize OpenCode client
     const initialized = await this.opencodeService.initialize();
     if (!initialized) {
-      new Notice("Failed to initialize service. Check settings.");
+      new Notice(t("notice.failedInit"));
     }
 
     // Register chat view
     this.registerView(VIEW_TYPE_CHAT, (leaf) => new ChatView(leaf, this));
 
     // Add ribbon icon
-    this.addRibbonIcon("message-square", "Open chat", () => {
+    this.addRibbonIcon("message-square", t("command.openChat"), () => {
       void this.activateView();
     });
 
@@ -69,7 +71,7 @@ export default class OnyxMindPlugin extends Plugin {
     // Open chat
     this.addCommand({
       id: "open-chat",
-      name: "Open chat",
+      name: t("command.openChat"),
       callback: () => {
         void this.activateView();
       },
@@ -78,11 +80,11 @@ export default class OnyxMindPlugin extends Plugin {
     // Ask about current note
     this.addCommand({
       id: "ask-about-note",
-      name: "Ask about current note",
+      name: t("command.askAboutNote"),
       callback: async () => {
         const file = this.app.workspace.getActiveFile();
         if (!file) {
-          new Notice("No active file");
+          new Notice(t("notice.noActiveFile"));
           return;
         }
 
@@ -101,11 +103,11 @@ export default class OnyxMindPlugin extends Plugin {
     // Summarize current note
     this.addCommand({
       id: "summarize-note",
-      name: "Summarize current note",
+      name: t("command.summarizeNote"),
       callback: async () => {
         const file = this.app.workspace.getActiveFile();
         if (!file) {
-          new Notice("No active file");
+          new Notice(t("notice.noActiveFile"));
           return;
         }
 

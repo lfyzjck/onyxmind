@@ -1,7 +1,4 @@
-import type {
-  Message,
-  StreamChunkToolUse,
-} from "../../services/opencode-service";
+import type { Message, StreamChunkToolUse } from "../../core/stream";
 import type { ToolCardMap } from "./types";
 
 export function getActiveQuestion(

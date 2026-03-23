@@ -1,11 +1,6 @@
 import type { OnyxMindSession } from "../../../services/session-manager";
-import {
-  ARIA_LABEL_CLEAR_MESSAGES,
-  ARIA_LABEL_NEW_SESSION,
-  ARIA_LABEL_SESSION_HISTORY,
-  CLASS_IS_ACTIVE,
-  LABEL_NO_SESSIONS,
-} from "../constants";
+import { CLASS_IS_ACTIVE } from "../constants";
+import { t } from "../../../i18n";
 import { SessionHistoryMenu } from "./session-history-menu";
 
 interface SessionStripProps {
@@ -45,7 +40,7 @@ export function SessionStrip(props: SessionStripProps) {
     <div className="onyxmind-session-strip">
       <div className="onyxmind-session-list">
         {sessions.length === 0 && (
-          <div className="onyxmind-session-empty">{LABEL_NO_SESSIONS}</div>
+          <div className="onyxmind-session-empty">{t("label.noSessions")}</div>
         )}
         {sessions.map((session, index) => (
           <button
@@ -82,14 +77,14 @@ export function SessionStrip(props: SessionStripProps) {
       <div className="onyxmind-strip-actions">
         <button
           className="onyxmind-icon-button"
-          aria-label={ARIA_LABEL_NEW_SESSION}
+          aria-label={t("aria.newSession")}
           onClick={onNewSession}
         >
           +
         </button>
         <button
           className="onyxmind-icon-button"
-          aria-label={ARIA_LABEL_CLEAR_MESSAGES}
+          aria-label={t("aria.clearMessages")}
           onClick={onClearMessages}
         >
           ⌫
@@ -97,7 +92,7 @@ export function SessionStrip(props: SessionStripProps) {
         <div className="onyxmind-history-container">
           <button
             className="onyxmind-icon-button"
-            aria-label={ARIA_LABEL_SESSION_HISTORY}
+            aria-label={t("aria.sessionHistory")}
             onClick={onToggleHistory}
           >
             📜

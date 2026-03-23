@@ -3,12 +3,9 @@ import { StreamingBubble } from "./streaming-bubble";
 import { WelcomeCards } from "./welcome-cards";
 import { QuestionReplyContext } from "../question-reply-context";
 import type OnyxMindPlugin from "../../../main";
-import type {
-  Message,
-  StreamChunkToolUse,
-} from "../../../services/opencode-service";
+import type { Message, StreamChunkToolUse } from "../../../core/stream";
 import { useEffect, type RefObject } from "react";
-import { LABEL_ERROR, LABEL_RUNNING } from "../constants";
+import { t } from "../../../i18n";
 import { registerFileLinkClickHandler } from "../file-link";
 
 interface MessagesPanelProps {
@@ -81,13 +78,13 @@ export function MessagesPanel(props: MessagesPanelProps) {
             display: isStreaming && !hasActiveQuestion ? "flex" : "none",
           }}
         >
-          <span>{LABEL_RUNNING}</span>
+          <span>{t("label.running")}</span>
         </div>
 
         {errors.map((error, idx) => (
           <div className="onyxmind-error" key={`${idx}-${error}`}>
             <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
-              <span>{LABEL_ERROR}</span>
+              <span>{t("label.error")}</span>
             </div>
             <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
               {error}

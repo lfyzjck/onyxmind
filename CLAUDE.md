@@ -63,13 +63,18 @@ See `OBSIDIAN_BEST_PRACTICES.md` for full details.
 ```
 onyxmind/
 ├── src/
-│   ├── services/
+│   ├── agent/
+│   │   └── opencode/        # OpenCode server/client integration
+│   ├── core/                # Shared type definitions
+│   │   ├── obsidian.ts      # Obsidian utility helpers
+│   │   ├── permission.ts    # PermissionAction, PermissionRuleConfig
+│   │   └── stream.ts        # StreamChunk*, Message, AvailableCommand, etc.
+│   ├── services/            # Business logic (chat, session management)
 │   ├── views/
 │   │   └── chat/
 │   │       ├── components/
 │   │       │   └── tools/
 │   │       └── hooks/
-│   ├── utils/
 │   └── commands/
 ├── docs/
 ├── tests/
@@ -80,5 +85,5 @@ onyxmind/
 ## Development Workflow
 
 1. We follow a fail-fast approach; do not add defensive/error-handling code unless necessary.
-2. After writing code, run `bun run lint` to check formatting and fix any issues.
+2. After writing code, run `bun run lint && bun run test` to check formatting and fix any issues.
 3. After all checks pass, run `bun run build` to build the plugin.

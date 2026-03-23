@@ -487,8 +487,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 - **OpenCode Team** - For the excellent AI agent framework
 - **Obsidian Team** - For the amazing note-taking platform
-- **Anthropic** - For Claude AI models
-- **Community Contributors** - For feedback and contributions
 
 ---
 
@@ -506,6 +504,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Made with ❤️ for the Obsidian community**
 
-[⭐ Star on GitHub](https://github.com/lfyzjck/onyxmind) • [📖 Read the Docs](https://github.com/lfyzjck/onyxmind/wiki) • [💬 Join Discussion](https://github.com/lfyzjck/onyxmind/discussions)
+[⭐ Star on GitHub](https://github.com/lfyzjck/onyxmind) • [📖 Read the Docs](https://github.com/lfyzjck/onyxmind/wiki)
 
 </div>

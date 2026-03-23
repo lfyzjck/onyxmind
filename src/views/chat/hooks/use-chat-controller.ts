@@ -10,13 +10,13 @@ import {
 } from "react";
 import type OnyxMindPlugin from "../../../main";
 import type {
-  AvailableCommand,
   Message,
   PermissionReply,
   StreamChunkPermission,
   StreamChunkQuestion,
   StreamChunkToolUse,
-} from "../../../services/opencode-service";
+} from "../../../core/stream";
+import type { AvailableCommand } from "../../../core/stream";
 import type {
   CreateSessionResult,
   OnyxMindSession,

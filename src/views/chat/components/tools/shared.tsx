@@ -1,8 +1,8 @@
 import { setIcon } from "obsidian";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
-import type { StreamChunkToolUse } from "../../../../services/opencode-service";
-import { LABEL_OUTPUT } from "../../constants";
+import type { StreamChunkToolUse } from "../../../../core/stream";
+import { t } from "../../../../i18n";
 
 export interface ToolItemProps {
   tool: StreamChunkToolUse;
@@ -114,7 +114,7 @@ export function ToolOutput({ tool }: { tool: StreamChunkToolUse }) {
           icon="chevron-right"
           className="onyxmind-tool-output-toggle"
         />
-        <span>{LABEL_OUTPUT}</span>
+        <span>{t("label.output")}</span>
       </summary>
       <div className="onyxmind-tool-output-content">
         {tool.error ? (
